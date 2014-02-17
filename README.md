@@ -13,7 +13,7 @@ Simple work in progress file sync client for files uploaded to Digipost
 
 ### Current status
 
-1. Downloads all files marked as 'uploaded' from Digipost to local dir **overwrites any existing files with same name**
+1. Downloads all files marked as 'uploaded' from Digipost to local dir **overwriting any existing files with same name**
 2. Uploads all new files from syncdir to Digipost
 
 ### TODO
