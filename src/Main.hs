@@ -21,7 +21,7 @@ import Config
 main :: IO ()
 main = do
     config <- readConfigFile "sync.conf"
-    putStrLn $ show config
+    --putStrLn $ show config
     putStrLn $ "Using syncDir: " ++ (syncDir config)
     runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
