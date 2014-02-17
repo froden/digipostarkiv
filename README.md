@@ -9,7 +9,7 @@ Simple work in progress file sync client for files uploaded to Digipost
 * cabal configure
 * cabal install
 * Add credentials to sync.conf
-* ```dist/build/dpsync/dpsync``
+* ```dist/build/dpsync/dpsync```
 
 ### Current status
 
@@ -20,8 +20,7 @@ Simple work in progress file sync client for files uploaded to Digipost
 * Use .sync to store state
 * Full sync (download all + upload all) when .sync is missing
 * Diff list from Digipost against .sync to determine:
-
-** Files deleted on server
-** Files deleted locally
-** New files on server
-** New files locally
+  * Files deleted on server
+  * Files deleted locally
+  * New files on server
+  * New files locally
