@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -22,7 +20,7 @@ main :: IO ()
 main = do
     config <- readConfigFile "sync.conf"
     --putStrLn $ show config
-    putStrLn $ "Using syncDir: " ++ (syncDir config)
+    putStrLn $ "Using syncDir: " ++ syncDir config
     runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
         authRes <- authenticate manager config
@@ -36,10 +34,10 @@ main = do
         files <- liftIO $ existingFiles (syncDir config)
         --download files from server
         let docsToDownload = D.notDownloaded files documents
-        liftIO $ putStrLn $ "download: [" ++ (intercalate ", " $ map D.filename docsToDownload) ++ "]"
+        liftIO $ putStrLn $ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]"
         downloadAll (Just cookies) manager (syncDir config) docsToDownload
         let newFiles = D.notUploaded files documents
-        liftIO $ putStrLn $ "upload: [" ++ (intercalate ", " newFiles) ++ "]"
+        liftIO $ putStrLn $ "upload: [" ++ intercalate ", " newFiles ++ "]"
         --upload newFiles
         let Just uploadLink = linkWithRel "upload_document" $ A.link account
         uploadAll (Just cookies) manager uploadLink (csrfToken root) (map (combine (syncDir config)) newFiles)

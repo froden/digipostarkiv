@@ -22,16 +22,16 @@ filename :: Document -> String
 filename doc = baseName ++ suffix
     where baseName = subject doc
           filetype = "." ++ fileType doc
-          suffix = if isSuffixOf filetype baseName then "" else filetype
+          suffix = if filetype `isSuffixOf` baseName then "" else filetype
 
 uploaded :: Document -> Bool
 uploaded = ("UPLOADED" ==) . origin
 
 notDownloaded :: [FilePath] -> [Document] -> [Document]
-notDownloaded files = filter (\d -> notElem (filename d) files)
+notDownloaded files = filter (\d -> filename d `notElem` files)
 
 notUploaded :: [FilePath] -> [Document] -> [FilePath]
-notUploaded files = (files \\) . (map filename)
+notUploaded files = (files \\) . map filename
 
 instance FromJSON Documents
 instance ToJSON Documents

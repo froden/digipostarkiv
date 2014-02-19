@@ -55,13 +55,13 @@ authenticate manager config = do
     let reqPost = req { method = "POST", requestBody = body, requestHeaders = headers}
     httpLbs reqPost manager
 
-getRoot :: Maybe CookieJar -> Manager -> ResourceT IO (Root)
+getRoot :: Maybe CookieJar -> Manager -> ResourceT IO Root
 getRoot cookies manager = do 
     req <- getRequest cookies digipostBaseUrl
     res <- httpLbs req manager
     decodeOrThrow $ responseBody res
 
-getDocuments :: Maybe CookieJar -> Manager -> Link -> ResourceT IO (D.Documents)
+getDocuments :: Maybe CookieJar -> Manager -> Link -> ResourceT IO D.Documents
 getDocuments cookies manager docsLink = do
     req <- getRequest cookies $ uri docsLink
     res <- httpLbs req manager
@@ -82,11 +82,11 @@ downloadDocument cookies manager syncDir document = do
     responseBody res $$+- sinkFile targetFile
 
 downloadAll :: Maybe CookieJar -> Manager -> FilePath -> [D.Document] -> ResourceT IO [()]
-downloadAll cookies manager syncDir documents = sequence $ map download documents
+downloadAll cookies manager syncDir = mapM download
     where download = downloadDocument cookies manager syncDir
 
 uploadAll :: Maybe CookieJar -> Manager -> Link -> String -> [FilePath] -> ResourceT IO [()]
-uploadAll cookies manager uploadLink token files = sequence $ map upload files
+uploadAll cookies manager uploadLink token = mapM upload
     where upload = uploadFileMultipart cookies manager uploadLink token
 
 uploadFileMultipart :: Maybe CookieJar -> Manager -> Link -> String -> FilePath -> ResourceT IO ()
