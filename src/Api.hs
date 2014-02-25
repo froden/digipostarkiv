@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric, MultiParamTypeClasses, DeriveDataTypeable, OverloadedStrings, FlexibleContexts #-}
 
 module Api where
 
@@ -25,7 +22,6 @@ import System.FilePath.Posix
 import Link
 import Root
 import qualified Document as D
-import qualified Config as Conf
 
 data JsonParseException = JsonParseException L.ByteString deriving (Show, Typeable)
 
@@ -47,16 +43,16 @@ decodeOrThrow json = case decode json of
 digipostV2Type :: B.ByteString
 digipostV2Type = "application/vnd.digipost-v2+json"
 
-authenticate :: Manager -> Conf.Config -> ResourceT IO (Response L.ByteString)
-authenticate manager config = do
+authenticate :: Manager -> Auth -> ResourceT IO (Response L.ByteString)
+authenticate manager auth = do
     req <- parseUrl $ digipostBaseUrl ++ "/private/passwordauth"
     let headers = [("Content-Type", digipostV2Type), ("Accept", digipostV2Type)]
-    let body = RequestBodyLBS $ encode Auth {username = Conf.username config, password = Conf.password config}
+    let body = RequestBodyLBS $ encode auth
     let reqPost = req { method = "POST", requestBody = body, requestHeaders = headers}
     httpLbs reqPost manager
 
-getRoot :: Maybe CookieJar -> Manager -> ResourceT IO Root
-getRoot cookies manager = do 
+getRoot :: Manager -> Maybe CookieJar -> ResourceT IO Root
+getRoot manager cookies = do 
     req <- getRequest cookies digipostBaseUrl
     res <- httpLbs req manager
     decodeOrThrow $ responseBody res

@@ -21,25 +21,40 @@ main = do
     config <- readConfigFile "sync.conf"
     --putStrLn $ show config
     putStrLn $ "Using syncDir: " ++ syncDir config
-    runResourceT $ do
+    sync config
+
+sync :: Config -> IO()
+sync config = runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
-        authRes <- authenticate manager config
-        let cookies = responseCookieJar authRes
-        root <- getRoot (Just cookies) manager
-        let account = primaryAccount root
-        let Just inboxLink = linkWithRel "document_archive" $ A.link account
-        allDocuments <- getDocuments (Just cookies) manager inboxLink
-        --we only want documents uploaded by the user
-        let documents = filter D.uploaded (D.document allDocuments)
+        session <- auth manager $ credentialsFromConfig config
+        (root, account) <- getAccount manager session
+        documents <- getDocs manager session $ linkOrException (A.archiveLink account)
         files <- liftIO $ existingFiles (syncDir config)
-        --download files from server
         let docsToDownload = D.notDownloaded files documents
         liftIO $ putStrLn $ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]"
-        downloadAll (Just cookies) manager (syncDir config) docsToDownload
+        downloadAll (Just session) manager (syncDir config) docsToDownload
         let newFiles = D.notUploaded files documents
         liftIO $ putStrLn $ "upload: [" ++ intercalate ", " newFiles ++ "]"
         --upload newFiles
         let Just uploadLink = linkWithRel "upload_document" $ A.link account
-        uploadAll (Just cookies) manager uploadLink (csrfToken root) (map (combine (syncDir config)) newFiles)
+        uploadAll (Just session) manager uploadLink (csrfToken root) (map (combine (syncDir config)) newFiles)
         liftIO $ putStrLn "Finished"
 
+auth :: Manager -> Auth -> ResourceT IO CookieJar
+auth manager credentials = do
+    authRes <- authenticate manager credentials
+    return $ responseCookieJar authRes
+
+getAccount :: Manager -> CookieJar -> ResourceT IO (Root, A.Account)
+getAccount manager cookies = do
+    root <- getRoot manager $ Just cookies
+    return (root, primaryAccount root)
+
+getDocs :: Manager -> CookieJar -> Link -> ResourceT IO [D.Document]
+getDocs manager cookies docsLink = do
+    allDocuments <- getDocuments (Just cookies) manager docsLink
+    --we only want documents uploaded by the user
+    return $ filter D.uploaded (D.document allDocuments)    
+
+credentialsFromConfig :: Config -> Auth
+credentialsFromConfig conf = Auth (Config.username conf) (Config.password conf)
