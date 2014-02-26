@@ -26,7 +26,7 @@ main = do
 sync :: Config -> IO()
 sync config = runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
-        session <- auth manager $ credentialsFromConfig config
+        session <- auth manager $ authFromConfig config
         (root, account) <- getAccount manager session
         documents <- getDocs manager session $ linkOrException (A.archiveLink account)
         files <- liftIO $ existingFiles (syncDir config)
@@ -56,5 +56,5 @@ getDocs manager cookies docsLink = do
     --we only want documents uploaded by the user
     return $ filter D.uploaded (D.document allDocuments)    
 
-credentialsFromConfig :: Config -> Auth
-credentialsFromConfig conf = Auth (Config.username conf) (Config.password conf)
+authFromConfig :: Config -> Auth
+authFromConfig conf = Auth (Config.username conf) (Config.password conf)

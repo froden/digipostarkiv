@@ -21,6 +21,7 @@ executable dpsync
                        base ==4.6.*,
                        aeson ==0.6.*,
                        http-conduit ==1.9.*,
+                       http-types ==0.8.*,
                        transformers ==0.3.*,
                        bytestring ==0.10.*,
                        conduit ==1.0.*,
