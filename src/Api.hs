@@ -47,12 +47,15 @@ digipostV2Type :: B.ByteString
 digipostV2Type = "application/vnd.digipost-v2+json"
 
 authenticate :: Manager -> Auth -> ResourceT IO (Response L.ByteString)
-authenticate manager auth = case auth2 (digipostBaseUrl ++ "/private/passwordauth") auth of
-    Nothing -> error "Failed to create auth request"
-    Just req -> httpLbs req manager
+authenticate manager auth = do 
+    authReq <- authRequest (digipostBaseUrl ++ "/private/passwordauth") auth
+    httpLbs authReq manager
 
-auth2 :: String -> Auth -> Maybe (Request m)
-auth2 url auth = setBody body <$> addHeaders headers <$> reqMethod "POST" <$> parseUrl url
+getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
+getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
+
+authRequest :: (Failure HttpException m, Functor m) => String -> Auth -> m (Request m')
+authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrl url
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
 
@@ -68,8 +71,8 @@ setBody body req = req { requestBody = body }
 setCookies :: Maybe CookieJar -> Request m -> Request m
 setCookies cookies req = req { cookieJar = cookies}
 
-reqMethod :: Method -> Request m -> Request m
-reqMethod m req = req { method = m }
+setMethod :: Method -> Request m -> Request m
+setMethod m req = req { method = m }
 
 addHeader :: Header -> Request m -> Request m
 addHeader hdr req = req { requestHeaders = hdr : requestHeaders req}
@@ -78,27 +81,26 @@ addHeaders :: [Header] -> Request m -> Request m
 addHeaders hdrs req = req { requestHeaders = hdrs ++ requestHeaders req}
 
 getRoot :: Manager -> Maybe CookieJar -> ResourceT IO Root
-getRoot manager cookies = do 
-    req <- getRequest cookies digipostBaseUrl
-    res <- httpLbs req manager
-    decodeOrThrow $ responseBody res
+getRoot manager cookies = getRequest cookies digipostBaseUrl >>= getJson manager
 
 getDocuments :: Maybe CookieJar -> Manager -> Link -> ResourceT IO D.Documents
-getDocuments cookies manager docsLink = do
-    req <- getRequest cookies $ uri docsLink
-    res <- httpLbs req manager
-    decodeOrThrow $ responseBody res
+getDocuments cookies manager docsLink = getRequest cookies (uri docsLink) >>= getJson manager
 
-getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
-getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
+getJson :: (FromJSON a) => Manager -> Request (ResourceT IO) -> ResourceT IO a 
+getJson manager req = httpLbs req manager >>= decodeOrThrow . responseBody
 
 downloadDocument :: Maybe CookieJar -> Manager -> FilePath -> D.Document -> ResourceT IO ()
 downloadDocument cookies manager syncDir document = do
-    let Just contentLink = linkWithRel "document_content" (D.link document)
-    let targetFile = combine syncDir $ D.filename document
-    req <- getRequest cookies $ uri contentLink
+    req <- downloadDocRequest cookies document
     res <- http req manager
     responseBody res $$+- sinkFile targetFile
+    where targetFile = combine syncDir $ D.filename document
+
+downloadDocRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> D.Document -> m (Request m')
+downloadDocRequest cookies document = linkM >>= requestFromLink
+    where linkM = linkWithRelM "document_content" links 
+          requestFromLink = getRequest cookies . uri
+          links = D.link document
 
 downloadAll :: Maybe CookieJar -> Manager -> FilePath -> [D.Document] -> ResourceT IO [()]
 downloadAll cookies manager syncDir = mapM download

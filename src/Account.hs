@@ -8,8 +8,8 @@ import Link
 
 data Account = Account { fullName :: String, link :: [Link] } deriving (Show, Generic)
 
-archiveLink :: Account -> Maybe Link
-archiveLink acc = linkWithRel "document_archive" $ link acc
+archiveLink :: (Monad m) => Account -> m Link
+archiveLink acc = linkWithRelM "document_archive" $ link acc
 
 instance FromJSON Account
 instance ToJSON Account

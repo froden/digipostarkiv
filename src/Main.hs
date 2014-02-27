@@ -28,7 +28,8 @@ sync config = runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
         session <- auth manager $ authFromConfig config
         (root, account) <- getAccount manager session
-        documents <- getDocs manager session $ linkOrException (A.archiveLink account)
+        archiveLink <- A.archiveLink account
+        documents <- getDocs manager session archiveLink
         files <- liftIO $ existingFiles (syncDir config)
         let docsToDownload = D.notDownloaded files documents
         liftIO $ putStrLn $ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]"

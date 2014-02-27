@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric, DeriveDataTypeable, FlexibleContexts #-}
 
 module Link where
 
@@ -20,6 +20,7 @@ data NoLinkException = NoLinkException deriving (Show, Typeable)
 
 instance Exception NoLinkException
 
-linkOrException :: Maybe Link -> Link
-linkOrException (Just l) = l
-linkOrException Nothing = throw NoLinkException
+linkWithRelM :: (Monad m) => String -> [Link] -> m Link
+linkWithRelM relation links = case linkWithRel relation links of
+	Nothing -> fail $ "No link found with rel " ++ relation
+	Just l -> return l
