@@ -26,7 +26,7 @@ main = do
 sync :: Config -> IO()
 sync config = runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
-        session <- auth manager $ authFromConfig config
+        session <- authenticate manager $ authFromConfig config
         (root, account) <- getAccount manager session
         archiveLink <- A.archiveLink account
         documents <- getDocs manager session archiveLink
@@ -40,22 +40,3 @@ sync config = runResourceT $ do
         let Just uploadLink = linkWithRel "upload_document" $ A.link account
         uploadAll (Just session) manager uploadLink (csrfToken root) (map (combine (syncDir config)) newFiles)
         liftIO $ putStrLn "Finished"
-
-auth :: Manager -> Auth -> ResourceT IO CookieJar
-auth manager credentials = do
-    authRes <- authenticate manager credentials
-    return $ responseCookieJar authRes
-
-getAccount :: Manager -> CookieJar -> ResourceT IO (Root, A.Account)
-getAccount manager cookies = do
-    root <- getRoot manager $ Just cookies
-    return (root, primaryAccount root)
-
-getDocs :: Manager -> CookieJar -> Link -> ResourceT IO [D.Document]
-getDocs manager cookies docsLink = do
-    allDocuments <- getDocuments (Just cookies) manager docsLink
-    --we only want documents uploaded by the user
-    return $ filter D.uploaded (D.document allDocuments)    
-
-authFromConfig :: Config -> Auth
-authFromConfig conf = Auth (Config.username conf) (Config.password conf)

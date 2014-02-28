@@ -4,7 +4,7 @@ module Api where
 
 import Network.HTTP.Conduit
 import Network.HTTP.Conduit.MultipartFormData
-import Data.ByteString.Char8 (pack)
+import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as L
 import Control.Monad.Error
@@ -23,10 +23,18 @@ import Http
 import Link
 import Root
 import qualified Document as D
+import qualified Account as A
+import qualified Config as C
 
-data JsonParseException = JsonParseException L.ByteString deriving (Show, Typeable)
+data ApiException = JsonParseException L.ByteString
+                |   AuthFailedException
+                deriving (Typeable)
 
-instance Exception JsonParseException
+instance Exception ApiException
+
+instance Show ApiException where
+    show (JsonParseException cause) = "Failed to parse json response: " ++ unpack (L.toStrict cause)
+    show AuthFailedException = "Wrong username or password"
 
 data Auth = Auth { username :: String, password :: String } deriving (Show, Generic)
 
@@ -41,10 +49,25 @@ decodeOrThrow json = case decode json of
     Nothing -> liftIO $ throwIO $ JsonParseException json
     Just decoded -> return decoded
 
-authenticate :: Manager -> Auth -> ResourceT IO (Response L.ByteString)
+getAccount :: Manager -> CookieJar -> ResourceT IO (Root, A.Account)
+getAccount manager cookies = do
+    root <- getRoot manager $ Just cookies
+    return (root, primaryAccount root)
+
+getDocs :: Manager -> CookieJar -> Link -> ResourceT IO [D.Document]
+getDocs manager cookies docsLink = do
+    allDocuments <- getDocuments (Just cookies) manager docsLink
+    --we only want documents uploaded by the user
+    return $ filter D.uploaded (D.document allDocuments)    
+
+authFromConfig :: C.Config -> Auth
+authFromConfig conf = Auth (C.username conf) (C.password conf)    
+
+authenticate :: Manager -> Auth -> ResourceT IO CookieJar
 authenticate manager auth = do 
     authReq <- authRequest (digipostBaseUrl ++ "/private/passwordauth") auth
-    httpLbs authReq manager
+    authRes <- httpLbs authReq manager
+    return $ responseCookieJar authRes
 
 getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
 getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
