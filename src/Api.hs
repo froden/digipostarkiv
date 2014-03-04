@@ -26,9 +26,7 @@ import qualified Document as D
 import qualified Account as A
 import qualified Config as C
 
-data ApiException = JsonParseException L.ByteString
-                |   AuthFailedException
-                deriving (Typeable)
+data ApiException = JsonParseException L.ByteString | AuthFailedException deriving (Typeable)
 
 instance Exception ApiException
 
@@ -69,13 +67,13 @@ authenticate manager auth = do
     authRes <- httpLbs authReq manager
     return $ responseCookieJar authRes
 
-getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
-getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
-
 authRequest :: (Failure HttpException m, Functor m) => String -> Auth -> m (Request m')
 authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrl url
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
+
+getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
+getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
 
 getRoot :: Manager -> Maybe CookieJar -> ResourceT IO Root
 getRoot manager cookies = getRequest cookies digipostBaseUrl >>= getJson manager
@@ -109,12 +107,12 @@ uploadAll cookies manager uploadLink token = mapM upload
 
 uploadFileMultipart :: Maybe CookieJar -> Manager -> Link -> String -> FilePath -> ResourceT IO ()
 uploadFileMultipart cookies manager uploadLink token file = do
-    req <- parseUrl $ uri uploadLink
-    let req2 = req { requestHeaders = [("Accept", "*/*")], cookieJar = cookies }
+    req <- addHeader ("Accept", "*/*") <$> setCookies cookies <$> parseUrl (uri uploadLink)
     multipartReq <- formDataBody [partBS "subject" (UTF8.fromString $ takeBaseName file),
                                   partBS "token" (pack token),
-                                  partFileSource "file" file] req2
-    res <- http multipartReq manager
-    responseBody res $$+- sinkFile "temp.txt"
+                                  partFileSource "file" file] req
+    http multipartReq manager
+    --check that responsebody is "OK"
+    --responseBody res $$+- sinkFile "temp.txt"
     return ()
 

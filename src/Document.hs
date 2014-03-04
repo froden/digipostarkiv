@@ -32,6 +32,16 @@ notDownloaded files = filter (\d -> filename d `notElem` files)
 notUploaded :: [FilePath] -> [Document] -> [FilePath]
 notUploaded files = (files \\) . map filename
 
+filesNotInDocList :: [FilePath] -> [Document] -> [FilePath]
+filesNotInDocList = notUploaded
+
+docsInList :: [FilePath] -> [Document] -> [Document]
+docsInList files = filter (\d -> filename d `elem` files)
+
+docsNotInList :: [FilePath] -> [Document] -> [Document]
+docsNotInList files = filter (\d -> filename d `notElem` files)
+
+
 instance FromJSON Documents
 instance ToJSON Documents
 
