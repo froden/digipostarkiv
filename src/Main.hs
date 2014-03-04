@@ -21,6 +21,7 @@ main = do
     config <- C.readConfigFile "sync.conf"
     --putStrLn $ show config
     putStrLn $ "Using syncDir: " ++ C.syncDir config
+    F.createSyncDir $ C.syncDir config
     sync config
 
 sync :: C.Config -> IO()

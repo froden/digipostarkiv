@@ -37,3 +37,6 @@ syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, files
 
 deleteAll :: FilePath -> [FilePath] -> IO [()]
 deleteAll syncDir = mapM (removeFile . combine syncDir)
+
+createSyncDir :: FilePath -> IO ()
+createSyncDir = createDirectoryIfMissing True
