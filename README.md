@@ -13,14 +13,11 @@ Simple work in progress file sync client for files uploaded to Digipost
 
 ### Current status
 
-1. Downloads all files marked as 'uploaded' from Digipost to local dir **overwriting any existing files with same name**
-2. Uploads all new files from syncdir to Digipost
+* Two way sync between local folder and Digipost archive
+* Will only sync documents marked as origin="uploaded"
+* Uses .sync and a three way diff to detect deleted files
+* Files can only be deleted from Digipost (to prevent accidentally deleting all files in archive)
 
 ### TODO
-* Use .sync to store state
-* Full sync (download all + upload all) when .sync is missing
-* Diff list from Digipost against .sync to determine:
-  * Files deleted on server
-  * Files deleted locally
-  * New files on server
-  * New files locally
+* Oauth authentication
+* Settings GUI?
