@@ -7,6 +7,7 @@ import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import System.FilePath.Posix
 import Data.List
+import Control.Concurrent
 
 import Api
 import Root
@@ -22,9 +23,16 @@ main = do
     --putStrLn $ show config
     putStrLn $ "Using syncDir: " ++ C.syncDir config
     F.createSyncDir $ C.syncDir config
-    sync config
+    loop config
 
-sync :: C.Config -> IO()
+loop :: C.Config -> IO ()
+loop config = do
+    _ <- sync config
+    _ <- threadDelay (5 * 1000000)
+    loop config
+
+
+sync :: C.Config -> IO ()
 sync config = runResourceT $ do
     manager <- liftIO $ newManager conduitManagerSettings
     session <- authenticate manager $ authFromConfig config
@@ -35,14 +43,17 @@ sync config = runResourceT $ do
     let syncFile = F.syncFile syncDir
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
-    let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents 
-    liftIO $ putStrLn $ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]"
-    liftIO $ putStrLn $ "upload: [" ++ intercalate ", " newFiles ++ "]"
-    liftIO $ putStrLn $ "deleted: [" ++ intercalate ", " deletedFiles ++ "]"
+    let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
+    liftIO $ mapM debugLog [ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
+                             "upload: [" ++ intercalate ", " newFiles ++ "]",
+                             "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
     downloadAll (Just session) manager syncDir docsToDownload
     let Just uploadLink = linkWithRel "upload_document" $ A.link account
     uploadAll (Just session) manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
     liftIO $ F.deleteAll syncDir deletedFiles
     newState <- liftIO $ F.existingFiles syncDir
     liftIO $ F.writeSyncFile syncFile newState
-    liftIO $ putStrLn "Finished"
+    liftIO $ debugLog "Finished"
+
+debugLog :: String -> IO ()
+debugLog str = putStrLn str
