@@ -28,7 +28,7 @@ main = do
 loop :: C.Config -> IO ()
 loop config = do
     _ <- sync config
-    _ <- threadDelay (5 * 1000000)
+    _ <- threadDelay (10 * 1000000)
     loop config
 
 
