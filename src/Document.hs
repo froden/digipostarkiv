@@ -21,7 +21,10 @@ filename :: Document -> String
 filename doc = baseName ++ suffix
     where baseName = subject doc
           filetype = "." ++ fileType doc
-          suffix = if filetype `isSuffixOf` baseName then "" else filetype
+          suffix
+            | filetype == "." = ""
+            | filetype `isSuffixOf` baseName = ""
+            | otherwise = filetype
 
 uploaded :: Document -> Bool
 uploaded = ("UPLOADED" ==) . origin
