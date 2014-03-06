@@ -44,7 +44,7 @@ sync config = runResourceT $ do
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
     let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
-    liftIO $ mapM debugLog [ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
+    liftIO $ void $ mapM debugLog [ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
                              "upload: [" ++ intercalate ", " newFiles ++ "]",
                              "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
     downloadAll (Just session) manager syncDir docsToDownload

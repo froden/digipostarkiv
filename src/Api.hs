@@ -97,12 +97,12 @@ downloadDocRequest cookies document = linkM >>= requestFromLink
           requestFromLink = getRequest cookies . uri
           links = D.link document
 
-downloadAll :: Maybe CookieJar -> Manager -> FilePath -> [D.Document] -> ResourceT IO [()]
-downloadAll cookies manager syncDir = mapM download
+downloadAll :: Maybe CookieJar -> Manager -> FilePath -> [D.Document] -> ResourceT IO ()
+downloadAll cookies manager syncDir = void . mapM download
     where download = downloadDocument cookies manager syncDir
 
-uploadAll :: Maybe CookieJar -> Manager -> Link -> String -> [FilePath] -> ResourceT IO [()]
-uploadAll cookies manager uploadLink token = mapM upload
+uploadAll :: Maybe CookieJar -> Manager -> Link -> String -> [FilePath] -> ResourceT IO ()
+uploadAll cookies manager uploadLink token = void . mapM upload
     where upload = uploadFileMultipart cookies manager uploadLink token
 
 uploadFileMultipart :: Maybe CookieJar -> Manager -> Link -> String -> FilePath -> ResourceT IO ()
@@ -111,7 +111,7 @@ uploadFileMultipart cookies manager uploadLink token file = do
     multipartReq <- formDataBody [partBS "subject" (UTF8.fromString $ takeBaseName file),
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
-    http multipartReq manager
+    _ <- http multipartReq manager
     --check that responsebody is "OK"
     --responseBody res $$+- sinkFile "temp.txt"
     return ()

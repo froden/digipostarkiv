@@ -3,6 +3,7 @@ module File where
 import System.Directory
 import Data.List
 import System.FilePath.Posix
+import Control.Monad
 
 import Document
 
@@ -35,8 +36,8 @@ syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, files
 		filesToDelete = filesNotInDocList lastState remoteDocs
 		filesToUpload = filesNotInDocList localFiles remoteDocs \\ filesToDelete
 
-deleteAll :: FilePath -> [FilePath] -> IO [()]
-deleteAll syncDir = mapM (removeFile . combine syncDir)
+deleteAll :: FilePath -> [FilePath] -> IO ()
+deleteAll syncDir = void . mapM (removeFile . combine syncDir)
 
 createSyncDir :: FilePath -> IO ()
 createSyncDir = createDirectoryIfMissing True
