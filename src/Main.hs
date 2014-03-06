@@ -28,7 +28,7 @@ main = do
 loop :: C.Config -> IO ()
 loop config = do
     _ <- sync config
-    _ <- threadDelay (10 * 1000000)
+    _ <- threadDelay $ syncInterval (C.interval config)
     loop config
 
 
@@ -54,6 +54,13 @@ sync config = runResourceT $ do
     newState <- liftIO $ F.existingFiles syncDir
     liftIO $ F.writeSyncFile syncFile newState
     liftIO $ debugLog "Finished"
+
+syncInterval :: Maybe Int -> Int
+syncInterval Nothing = 10 * 1000000
+syncInterval (Just interval)
+    | interval < 5 = 5 * seconds
+    | otherwise = interval * seconds
+        where seconds = 1000000
 
 debugLog :: String -> IO ()
 debugLog str = putStrLn str

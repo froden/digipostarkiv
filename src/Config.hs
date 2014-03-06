@@ -9,9 +9,10 @@ import Data.Typeable
 import qualified Data.ByteString.Lazy as LBS
 
 data Config = Config { 
-    username :: String, 
+    username :: String,
     password :: String,
-    syncDir  :: FilePath } deriving (Show, Generic)
+    syncDir  :: FilePath,
+    interval :: Maybe Int } deriving (Show, Generic)
 
 data ConfigParseException = ConfigParseException deriving (Show, Typeable)
 instance Exception ConfigParseException
