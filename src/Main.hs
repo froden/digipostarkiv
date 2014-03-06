@@ -27,8 +27,8 @@ main = do
 
 loop :: C.Config -> IO ()
 loop config = do
-    _ <- sync config
-    _ <- threadDelay $ syncInterval (C.interval config)
+    sync config
+    threadDelay $ syncInterval (C.interval config)
     loop config
 
 
@@ -44,9 +44,10 @@ sync config = runResourceT $ do
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
     let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
-    liftIO $ void $ mapM debugLog [ "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
-                             "upload: [" ++ intercalate ", " newFiles ++ "]",
-                             "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
+    liftIO $ void $ mapM debugLog [ 
+                            "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
+                            "upload: [" ++ intercalate ", " newFiles ++ "]",
+                            "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
     downloadAll (Just session) manager syncDir docsToDownload
     let Just uploadLink = linkWithRel "upload_document" $ A.link account
     uploadAll (Just session) manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
