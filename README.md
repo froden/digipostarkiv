@@ -8,7 +8,6 @@ Simple work in progress file sync client for files uploaded to Digipost
 * install haskell platform	```brew install haskell-platform```
 * cabal configure
 * cabal install
-* Add credentials to sync.conf
 * ```dist/build/dpsync/dpsync```
 
 ### Current status

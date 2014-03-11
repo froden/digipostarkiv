@@ -6,13 +6,15 @@ import Data.Aeson
 import GHC.Generics (Generic)
 import Control.Exception
 import Data.Typeable
+import System.FilePath.Posix
 import qualified Data.ByteString.Lazy as LBS
 
-data Config = Config { 
-    username :: String,
-    password :: String,
-    syncDir  :: FilePath,
+data Config = Config {
+ 	syncDir  :: FilePath,
     interval :: Maybe Int } deriving (Show, Generic)
+
+defaultConfig :: FilePath -> Config
+defaultConfig homeDir = Config (combine homeDir "Digipostarkiv") (Just 10)
 
 data ConfigParseException = ConfigParseException deriving (Show, Typeable)
 instance Exception ConfigParseException

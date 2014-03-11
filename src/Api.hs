@@ -24,7 +24,6 @@ import Link
 import Root
 import qualified Document as D
 import qualified Account as A
-import qualified Config as C
 
 data ApiException = JsonParseException L.ByteString | AuthFailedException deriving (Typeable)
 
@@ -57,9 +56,6 @@ getDocs manager cookies docsLink = do
     allDocuments <- getDocuments (Just cookies) manager docsLink
     --we only want documents uploaded by the user
     return $ filter D.uploaded (D.document allDocuments)    
-
-authFromConfig :: C.Config -> Auth
-authFromConfig conf = Auth (C.username conf) (C.password conf)    
 
 authenticate :: Manager -> Auth -> ResourceT IO CookieJar
 authenticate manager auth = do 
