@@ -3,6 +3,7 @@
 module Main where
 
 import Network.HTTP.Conduit
+import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import System.FilePath.Posix
@@ -26,10 +27,10 @@ main = do
     pwd <- getPassword
     userHome <- getHomeDirectory
     let config = C.defaultConfig userHome
-    putStrLn $ show config
+    --putStrLn $ show config
     putStrLn $ "Using syncDir: " ++ C.syncDir config
     F.createSyncDir $ C.syncDir config
-    loop config $ Auth usr pwd
+    catch (sync config $ Auth usr pwd) handleError
 
 loop :: C.Config -> Auth -> IO ()
 loop config auth = do
@@ -87,6 +88,10 @@ syncInterval (Just interval)
     | interval < 5 = 5 * seconds
     | otherwise = interval * seconds
         where seconds = 1000000
+
+handleError :: HttpException -> IO ()
+handleError (StatusCodeException (Status 403 _) _ _) = putStrLn "Feil fødselsnummer eller passord"
+handleError e = throwIO e
 
 debugLog :: String -> IO ()
 debugLog str = putStrLn str
