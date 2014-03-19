@@ -3,7 +3,7 @@
 module Api where
 
 import Network.HTTP.Conduit
-import Network.HTTP.Conduit.MultipartFormData
+import Network.HTTP.Client.MultipartFormData
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as L
@@ -63,12 +63,12 @@ authenticate manager auth = do
     authRes <- httpLbs authReq manager
     return $ responseCookieJar authRes
 
-authRequest :: (Failure HttpException m, Functor m) => String -> Auth -> m (Request m')
+authRequest :: (Failure HttpException m, Functor m) => String -> Auth -> m Request
 authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrl url
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
 
-getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m (Request m')
+getRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> String -> m Request
 getRequest cookies url = addHeader acceptDigipost <$> setCookies cookies <$> parseUrl url
 
 getRoot :: Manager -> Maybe CookieJar -> ResourceT IO Root
@@ -77,7 +77,7 @@ getRoot manager cookies = getRequest cookies digipostBaseUrl >>= getJson manager
 getDocuments :: Maybe CookieJar -> Manager -> Link -> ResourceT IO D.Documents
 getDocuments cookies manager docsLink = getRequest cookies (uri docsLink) >>= getJson manager
 
-getJson :: (FromJSON a) => Manager -> Request (ResourceT IO) -> ResourceT IO a 
+getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
 getJson manager req = httpLbs req manager >>= decodeOrThrow . responseBody
 
 downloadDocument :: Maybe CookieJar -> Manager -> FilePath -> D.Document -> ResourceT IO ()
@@ -87,7 +87,7 @@ downloadDocument cookies manager syncDir document = do
     responseBody res $$+- sinkFile targetFile
     where targetFile = combine syncDir $ D.filename document
 
-downloadDocRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> D.Document -> m (Request m')
+downloadDocRequest :: (Failure HttpException m, Functor m) => Maybe CookieJar -> D.Document -> m Request
 downloadDocRequest cookies document = linkM >>= requestFromLink
     where linkM = linkWithRelM "document_content" links 
           requestFromLink = getRequest cookies . uri

@@ -16,17 +16,17 @@ contentTypeDigipost = ("Content-Type", digipostV2Type)
 acceptDigipost :: Header
 acceptDigipost = ("Accept", digipostV2Type)
 
-setBody :: RequestBody m -> Request m -> Request m
+setBody :: RequestBody -> Request -> Request
 setBody body req = req { requestBody = body }
 
-setCookies :: Maybe CookieJar -> Request m -> Request m
+setCookies :: Maybe CookieJar -> Request -> Request
 setCookies cookies req = req { cookieJar = cookies}
 
-setMethod :: Method -> Request m -> Request m
+setMethod :: Method -> Request -> Request
 setMethod m req = req { method = m }
 
-addHeader :: Header -> Request m -> Request m
+addHeader :: Header -> Request -> Request
 addHeader hdr req = req { requestHeaders = hdr : requestHeaders req}
 
-addHeaders :: [Header] -> Request m -> Request m
+addHeaders :: [Header] -> Request -> Request
 addHeaders hdrs req = req { requestHeaders = hdrs ++ requestHeaders req}
