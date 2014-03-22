@@ -4,8 +4,10 @@ module Api where
 
 import Network.HTTP.Conduit
 import Network.HTTP.Client.MultipartFormData
+import qualified Network.HTTP.Client as Client
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
+import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Control.Monad.Error
 import GHC.Generics (Generic)
@@ -14,6 +16,7 @@ import Control.Monad.Trans.Resource
 import Control.Failure
 import Data.Conduit
 import Data.Conduit.Binary (sinkFile)
+import qualified Data.Conduit.List as CL
 import Control.Exception
 import Data.Typeable
 import System.FilePath.Posix
@@ -78,7 +81,15 @@ getDocuments :: Maybe CookieJar -> Manager -> Link -> ResourceT IO D.Documents
 getDocuments cookies manager docsLink = getRequest cookies (uri docsLink) >>= getJson manager
 
 getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
-getJson manager req = httpLbs req manager >>= decodeOrThrow . responseBody
+getJson manager req = do
+    liftIO $ putStrLn "before req"
+    res <- httpLbs req manager
+    liftIO $ putStrLn "after req"
+    liftIO $ print $ responseHeaders res
+    --responseBody res $$+- sinkFile "res.txt"
+    --liftIO $ putStrLn "after sinkfile"
+    --bss <- liftIO $ Client.brConsume $ responseBody res
+    (decodeOrThrow . responseBody) res
 
 downloadDocument :: Maybe CookieJar -> Manager -> FilePath -> D.Document -> ResourceT IO ()
 downloadDocument cookies manager syncDir document = do

@@ -13,6 +13,9 @@ import System.Directory
 import System.IO
 import Control.Exception
 
+import Data.Conduit
+import Data.Conduit.Binary (sinkFile)
+
 import Api
 import Root
 import Link
@@ -44,6 +47,7 @@ sync config auth = runResourceT $ do
     manager <- liftIO $ newManager conduitManagerSettings
     session <- authenticate manager auth
     (root, account) <- getAccount manager session
+    liftIO $ print root
     archiveLink <- A.archiveLink account
     documents <- getDocs manager session archiveLink
     let syncDir = C.syncDir config

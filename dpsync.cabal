@@ -21,6 +21,7 @@ executable dpsync
                        aeson ==0.6.*,
                        http-conduit ==2.0.*,
                        http-client-multipart ==0.2.*,
+                       http-client ==0.2.*,
                        http-types ==0.8.*,
                        transformers ==0.3.*,
                        bytestring ==0.10.*,
