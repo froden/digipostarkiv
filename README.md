@@ -1,4 +1,4 @@
-# DPsync
+# Digipostarkiv
 
 Simple work in progress file sync client for files uploaded to Digipost
 
@@ -7,20 +7,21 @@ Simple work in progress file sync client for files uploaded to Digipost
 * install ghc	```brew install ghc```
 * install haskell platform	```brew install haskell-platform```
 * cabal configure
-* cabal install
-* ```dist/build/dpsync/dpsync```
+* cabal build
+* open xcode project
+* build and run
 
 ### Current status
 
-* Two way sync between local folder and Digipost archive
+* OSX status bar application GUI
+* Oauth2 login for Digipost
+* Two way sync between local folder (Digipostarkiv) and Digipost archive
 * Will only sync documents marked as origin="uploaded"
 * Uses .sync and a three way diff to detect deleted files
 * Files can only be deleted from Digipost (to prevent accidentally deleting all files in archive)
 * Checks for changes every 10 seconds
-* Configurable interval in sync.conf
 
 ### TODO
 * Handle updated files
-* Oauth authentication
-* Settings GUI?
-* Configurable debug output
+* Status bar icon
+* Sync status indication
