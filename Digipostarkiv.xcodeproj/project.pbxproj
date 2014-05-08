@@ -1,0 +1,516 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
+		DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF631906F23A008C83D2 /* InfoPlist.strings */; };
+		DEB1EF671906F23A008C83D2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF661906F23A008C83D2 /* main.m */; };
+		DEB1EF6B1906F23A008C83D2 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF691906F23A008C83D2 /* Credits.rtf */; };
+		DEB1EF6E1906F23A008C83D2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */; };
+		DEB1EF711906F23A008C83D2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */; };
+		DEB1EF731906F23A008C83D2 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF721906F23A008C83D2 /* Images.xcassets */; };
+		DEB1EF7A1906F23A008C83D2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF791906F23A008C83D2 /* XCTest.framework */; };
+		DEB1EF7B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
+		DEB1EF831906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF811906F23A008C83D2 /* InfoPlist.strings */; };
+		DEB1EF851906F23A008C83D2 /* DigipostarkivTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */; };
+		DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD31909082700F7C9FD /* liba.a */; };
+		DEE5DCD619090FB300F7C9FD /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD519090FB300F7C9FD /* WebKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DEB1EF7C1906F23A008C83D2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DEB1EF4F1906F23A008C83D2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DEB1EF561906F23A008C83D2;
+			remoteInfo = DPSync;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Digipostarkiv.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		DEB1EF5D1906F23A008C83D2 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		DEB1EF5E1906F23A008C83D2 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		DEB1EF5F1906F23A008C83D2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		DEB1EF621906F23A008C83D2 /* Digipostarkiv-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Digipostarkiv-Info.plist"; sourceTree = "<group>"; };
+		DEB1EF641906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		DEB1EF661906F23A008C83D2 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		DEB1EF681906F23A008C83D2 /* Digipostarkiv-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Digipostarkiv-Prefix.pch"; sourceTree = "<group>"; };
+		DEB1EF6A1906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		DEB1EF701906F23A008C83D2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		DEB1EF721906F23A008C83D2 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		DEB1EF781906F23A008C83D2 /* DigipostarkivTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DigipostarkivTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DEB1EF791906F23A008C83D2 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		DEB1EF801906F23A008C83D2 /* DigipostarkivTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "DigipostarkivTests-Info.plist"; sourceTree = "<group>"; };
+		DEB1EF821906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DigipostarkivTests.m; sourceTree = "<group>"; };
+		DEE5DCD31909082700F7C9FD /* liba.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liba.a; sourceTree = "<group>"; };
+		DEE5DCD519090FB300F7C9FD /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DEB1EF541906F23A008C83D2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEE5DCD619090FB300F7C9FD /* WebKit.framework in Frameworks */,
+				DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */,
+				DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DEB1EF751906F23A008C83D2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB1EF7B1906F23A008C83D2 /* Cocoa.framework in Frameworks */,
+				DEB1EF7A1906F23A008C83D2 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DEB1EF4E1906F23A008C83D2 = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF601906F23A008C83D2 /* Digipostarkiv */,
+				DEB1EF7E1906F23A008C83D2 /* DigipostarkivTest */,
+				DEB1EF591906F23A008C83D2 /* Frameworks */,
+				DEB1EF581906F23A008C83D2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DEB1EF581906F23A008C83D2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */,
+				DEB1EF781906F23A008C83D2 /* DigipostarkivTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DEB1EF591906F23A008C83D2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DEE5DCD519090FB300F7C9FD /* WebKit.framework */,
+				DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */,
+				DEB1EF791906F23A008C83D2 /* XCTest.framework */,
+				DEB1EF5C1906F23A008C83D2 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		DEB1EF5C1906F23A008C83D2 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DEE5DCD31909082700F7C9FD /* liba.a */,
+				DEB1EF5D1906F23A008C83D2 /* AppKit.framework */,
+				DEB1EF5E1906F23A008C83D2 /* CoreData.framework */,
+				DEB1EF5F1906F23A008C83D2 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		DEB1EF601906F23A008C83D2 /* Digipostarkiv */ = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */,
+				DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */,
+				DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */,
+				DEB1EF721906F23A008C83D2 /* Images.xcassets */,
+				DEB1EF611906F23A008C83D2 /* Supporting Files */,
+			);
+			path = Digipostarkiv;
+			sourceTree = "<group>";
+		};
+		DEB1EF611906F23A008C83D2 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF621906F23A008C83D2 /* Digipostarkiv-Info.plist */,
+				DEB1EF631906F23A008C83D2 /* InfoPlist.strings */,
+				DEB1EF661906F23A008C83D2 /* main.m */,
+				DEB1EF681906F23A008C83D2 /* Digipostarkiv-Prefix.pch */,
+				DEB1EF691906F23A008C83D2 /* Credits.rtf */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		DEB1EF7E1906F23A008C83D2 /* DigipostarkivTest */ = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */,
+				DEB1EF7F1906F23A008C83D2 /* Supporting Files */,
+			);
+			name = DigipostarkivTest;
+			path = DigipostarkivTests;
+			sourceTree = "<group>";
+		};
+		DEB1EF7F1906F23A008C83D2 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				DEB1EF801906F23A008C83D2 /* DigipostarkivTests-Info.plist */,
+				DEB1EF811906F23A008C83D2 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DEB1EF561906F23A008C83D2 /* Digipostarkiv */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DEB1EF881906F23A008C83D2 /* Build configuration list for PBXNativeTarget "Digipostarkiv" */;
+			buildPhases = (
+				DEB1EF531906F23A008C83D2 /* Sources */,
+				DEB1EF541906F23A008C83D2 /* Frameworks */,
+				DEB1EF551906F23A008C83D2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Digipostarkiv;
+			productName = DPSync;
+			productReference = DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DEB1EF771906F23A008C83D2 /* DigipostarkivTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DEB1EF8B1906F23A008C83D2 /* Build configuration list for PBXNativeTarget "DigipostarkivTests" */;
+			buildPhases = (
+				DEB1EF741906F23A008C83D2 /* Sources */,
+				DEB1EF751906F23A008C83D2 /* Frameworks */,
+				DEB1EF761906F23A008C83D2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DEB1EF7D1906F23A008C83D2 /* PBXTargetDependency */,
+			);
+			name = DigipostarkivTests;
+			productName = DPSyncTests;
+			productReference = DEB1EF781906F23A008C83D2 /* DigipostarkivTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DEB1EF4F1906F23A008C83D2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = Nerbraten;
+				TargetAttributes = {
+					DEB1EF771906F23A008C83D2 = {
+						TestTargetID = DEB1EF561906F23A008C83D2;
+					};
+				};
+			};
+			buildConfigurationList = DEB1EF521906F23A008C83D2 /* Build configuration list for PBXProject "Digipostarkiv" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DEB1EF4E1906F23A008C83D2;
+			productRefGroup = DEB1EF581906F23A008C83D2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DEB1EF561906F23A008C83D2 /* Digipostarkiv */,
+				DEB1EF771906F23A008C83D2 /* DigipostarkivTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DEB1EF551906F23A008C83D2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */,
+				DEB1EF731906F23A008C83D2 /* Images.xcassets in Resources */,
+				DEB1EF6B1906F23A008C83D2 /* Credits.rtf in Resources */,
+				DEB1EF711906F23A008C83D2 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DEB1EF761906F23A008C83D2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB1EF831906F23A008C83D2 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DEB1EF531906F23A008C83D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB1EF6E1906F23A008C83D2 /* AppDelegate.m in Sources */,
+				DEB1EF671906F23A008C83D2 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DEB1EF741906F23A008C83D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB1EF851906F23A008C83D2 /* DigipostarkivTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DEB1EF7D1906F23A008C83D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DEB1EF561906F23A008C83D2 /* Digipostarkiv */;
+			targetProxy = DEB1EF7C1906F23A008C83D2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		DEB1EF631906F23A008C83D2 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DEB1EF641906F23A008C83D2 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		DEB1EF691906F23A008C83D2 /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DEB1EF6A1906F23A008C83D2 /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+		DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DEB1EF701906F23A008C83D2 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		DEB1EF811906F23A008C83D2 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DEB1EF821906F23A008C83D2 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		DEB1EF861906F23A008C83D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		DEB1EF871906F23A008C83D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		DEB1EF891906F23A008C83D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
+				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Digipostarkiv",
+					"/Users/frode/dev/haskell/digipostarkiv/**",
+				);
+				OTHER_LDFLAGS = (
+					"-lz",
+					"-liconv",
+				);
+				PRODUCT_NAME = Digipostarkiv;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.2/include /Users/frode/dev/haskell/digipostarkiv/dist/build";
+				VALID_ARCHS = "i386 x86_64";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		DEB1EF8A1906F23A008C83D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
+				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Digipostarkiv",
+					"/Users/frode/dev/haskell/digipostarkiv/**",
+				);
+				OTHER_LDFLAGS = (
+					"-lz",
+					"-liconv",
+				);
+				PRODUCT_NAME = Digipostarkiv;
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.2/include /Users/frode/dev/haskell/digipostarkiv/dist/build";
+				VALID_ARCHS = "i386 x86_64";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		DEB1EF8C1906F23A008C83D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/DPSync.app/Contents/MacOS/DPSync";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "DPSync/DPSync-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "DPSyncTests/DigipostarkivTests-Info.plist";
+				PRODUCT_NAME = DigipostarkivTests;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		DEB1EF8D1906F23A008C83D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/DPSync.app/Contents/MacOS/DPSync";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "DPSync/DPSync-Prefix.pch";
+				INFOPLIST_FILE = "DPSyncTests/DigipostarkivTests-Info.plist";
+				PRODUCT_NAME = DigipostarkivTests;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DEB1EF521906F23A008C83D2 /* Build configuration list for PBXProject "Digipostarkiv" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEB1EF861906F23A008C83D2 /* Debug */,
+				DEB1EF871906F23A008C83D2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DEB1EF881906F23A008C83D2 /* Build configuration list for PBXNativeTarget "Digipostarkiv" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEB1EF891906F23A008C83D2 /* Debug */,
+				DEB1EF8A1906F23A008C83D2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DEB1EF8B1906F23A008C83D2 /* Build configuration list for PBXNativeTarget "DigipostarkivTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEB1EF8C1906F23A008C83D2 /* Debug */,
+				DEB1EF8D1906F23A008C83D2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DEB1EF4F1906F23A008C83D2 /* Project object */;
+}

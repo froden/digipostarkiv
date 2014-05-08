@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>1344A1C0-8645-4B9A-8E46-E106617B7DD8</string>
+	<key>IDESourceControlProjectName</key>
+	<string>Digipostarkiv</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>03E827CC-B22A-4A0E-9649-AC3391F62C60</key>
+		<string>ssh://github.com/froden/digipostarkiv.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Digipostarkiv.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>03E827CC-B22A-4A0E-9649-AC3391F62C60</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://github.com/froden/digipostarkiv.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>03E827CC-B22A-4A0E-9649-AC3391F62C60</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>03E827CC-B22A-4A0E-9649-AC3391F62C60</string>
+			<key>IDESourceControlWCCName</key>
+			<string>digipostarkiv</string>
+		</dict>
+	</array>
+</dict>
+</plist>
