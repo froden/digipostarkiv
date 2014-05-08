@@ -677,7 +677,7 @@
                         <action selector="login:" target="Voe-Tx-rLC" id="NLb-Wv-ncm"/>
                     </connections>
                 </menuItem>
-                <menuItem title="Sync" id="cyW-AI-FIe">
+                <menuItem title="Sync now" id="cyW-AI-FIe">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="sync:" target="Voe-Tx-rLC" id="j4J-fh-Dvh"/>
@@ -703,7 +703,9 @@
                     <webView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HcF-40-ePl">
                         <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <webPreferences key="preferences" defaultFontSize="12" defaultFixedFontSize="12"/>
+                        <webPreferences key="preferences" defaultFontSize="12" defaultFixedFontSize="12">
+                            <nil key="identifier"/>
+                        </webPreferences>
                     </webView>
                 </subviews>
             </view>

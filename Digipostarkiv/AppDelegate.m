@@ -16,12 +16,21 @@
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+    presentLogin = true;
+    syncInProgress = false;
+    
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [statusItem setMenu:_statusMenu];
     [statusItem setTitle:@"Digipost"];
     [statusItem setHighlightMode:YES];
     
-    [self sync:nil];
+    //[self performSelectorInBackground:@selector(digipostSync) withObject:false];
+    //[self sync:nil];
+    [NSTimer scheduledTimerWithTimeInterval:10.0
+                                     target:self
+                                   selector:@selector(digipostSync:)
+                                   userInfo:nil
+                                    repeats:true];
 }
 
 - (IBAction)exitApp:(id)sender {
@@ -72,11 +81,26 @@
 }
 
 - (IBAction)sync:(id)sender {
+    [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
+}
+
+
+
+
+- (void)digipostSync:(NSTimer*)timer {
+    if (syncInProgress) {
+        return;
+    }
+    syncInProgress = true;
     int result = syncNow();
     NSLog(@"Syncresult: %i", result);
     if (result == 1) {
-        [self login:nil];
+        if (presentLogin) {
+            presentLogin = false;
+            [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+        }
     }
+    syncInProgress = false;
 }
 
 @end

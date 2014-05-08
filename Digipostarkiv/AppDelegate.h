@@ -11,6 +11,9 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     NSStatusItem *statusItem;
+    
+    bool syncInProgress;
+    bool presentLogin;
 }
 
 @property (assign) IBOutlet NSWindow *window;
@@ -24,5 +27,7 @@
 - (IBAction)sync:(id)sender;
 
 - (NSString*)parseCode:(NSURL*)url;
+
+- (void)digipostSync:(NSTimer*)timer;
 
 @end
