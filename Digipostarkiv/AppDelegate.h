@@ -12,8 +12,9 @@
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     NSStatusItem *statusItem;
     
-    bool syncInProgress;
-    bool presentLogin;
+    BOOL syncInProgress;
+    BOOL presentLogin;
+    BOOL loggedIn;
 }
 
 @property (assign) IBOutlet NSWindow *window;

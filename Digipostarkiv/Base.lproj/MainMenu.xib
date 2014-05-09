@@ -677,7 +677,13 @@
                         <action selector="login:" target="Voe-Tx-rLC" id="NLb-Wv-ncm"/>
                     </connections>
                 </menuItem>
-                <menuItem title="Sync now" id="cyW-AI-FIe">
+                <menuItem title="Logg ut" id="CzG-yS-Q7s">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="logout:" target="Voe-Tx-rLC" id="DcZ-1u-ogq"/>
+                    </connections>
+                </menuItem>
+                <menuItem title="Synk nå" id="cyW-AI-FIe">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="sync:" target="Voe-Tx-rLC" id="j4J-fh-Dvh"/>

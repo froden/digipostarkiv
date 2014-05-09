@@ -18,19 +18,23 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     presentLogin = true;
     syncInProgress = false;
+    loggedIn = false;
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [statusItem setMenu:_statusMenu];
-    [statusItem setTitle:@"Digipost"];
+    NSImage *statusImage = [NSImage imageNamed:@"digipostbw.png"];
+    [statusImage setSize:NSMakeSize(20.0, 20.0)];
+    NSImage *altStatusImage = [NSImage imageNamed:@"digipostbw-white.png"];
+    [altStatusImage setSize:NSMakeSize(20.0, 20.0)];
+    [statusItem setImage:statusImage];
+    [statusItem setAlternateImage:altStatusImage];
     [statusItem setHighlightMode:YES];
     
-    //[self performSelectorInBackground:@selector(digipostSync) withObject:false];
-    //[self sync:nil];
-    [NSTimer scheduledTimerWithTimeInterval:10.0
+    [[NSTimer scheduledTimerWithTimeInterval:10.0
                                      target:self
                                    selector:@selector(digipostSync:)
                                    userInfo:nil
-                                    repeats:true];
+                                    repeats:true] fire];
 }
 
 - (IBAction)exitApp:(id)sender {
@@ -48,6 +52,11 @@
     [[self.webView mainFrame] loadRequest:urlRequest];
 }
 
+- (IBAction)logout:(id)sender {
+    //TODO: fix real logout
+    loggedIn = false;
+}
+
 - (void)handleURLEvent:(NSAppleEventDescriptor*)event withReplyEvent:(NSAppleEventDescriptor*)replyEvent
 {
     NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
@@ -58,6 +67,7 @@
     NSLog(@"%i", result);
     
     if (result == 0) {
+        loggedIn = true;
         [self.window close];
     }
 }
@@ -84,6 +94,18 @@
     [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
 }
 
+- (BOOL)validateMenuItem:(NSMenuItem *)item {
+    SEL action = [item action];
+    if (action == @selector(login:)) {
+        [item setHidden:loggedIn];
+        return !loggedIn;
+    } else if (action == @selector(logout:)) {
+        [item setHidden:!loggedIn];
+        return loggedIn;
+    } else {
+        return YES;
+    }
+}
 
 
 
@@ -94,7 +116,10 @@
     syncInProgress = true;
     int result = syncNow();
     NSLog(@"Syncresult: %i", result);
-    if (result == 1) {
+    if (result == 0) {
+        loggedIn = true;
+    } else if (result == 1) {
+        loggedIn = false;
         if (presentLogin) {
             presentLogin = false;
             [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
