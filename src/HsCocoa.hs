@@ -11,6 +11,7 @@ import Api
 foreign export ccall authUrl :: CString -> IO CString
 foreign export ccall accessToken :: CString -> CString -> IO CInt
 foreign export ccall syncNow :: IO CInt
+foreign export ccall logout :: IO ()
 
 
 authUrl :: CString -> IO CString
@@ -36,4 +37,8 @@ syncNow = do
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
 		Left (HttpFailed e) -> print e >> return 99
+
+logout :: IO ()
+logout = O.removeAccessToken
+
 

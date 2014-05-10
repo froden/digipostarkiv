@@ -66,6 +66,9 @@ loadAccessToken = catch readFileIfExists whenNotFound
     whenNotFound :: IOException -> IO (Maybe HTTP.AccessToken)
     whenNotFound _ = return Nothing
 
+removeAccessToken :: IO ()
+removeAccessToken = getHomeDirectory >>= \userHome -> removeFile $ accessTokenFile userHome
+
 accessTokenFile :: FilePath -> FilePath
 accessTokenFile userHome = combine userHome ".digipostarkiv"
 

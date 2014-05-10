@@ -53,7 +53,7 @@
 }
 
 - (IBAction)logout:(id)sender {
-    //TODO: fix real logout
+    logout();
     loggedIn = false;
 }
 
