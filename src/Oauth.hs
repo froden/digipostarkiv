@@ -6,11 +6,7 @@ module Oauth where
 import qualified Data.ByteString                 as BS
 import qualified Data.Text                       as T
 import qualified Data.Text.Encoding              as T
-import Control.Monad.Trans.Resource
-import Control.Monad.Error
 import Control.Exception
-import System.Random
-import Control.Applicative
 import System.FilePath.Posix
 import System.Directory
 import Text.Read
@@ -20,27 +16,14 @@ import Network.OAuth.OAuth2
 import Api
 import qualified Http as HTTP
 
--- deprecated: just for testing
-login :: ResourceT IO HTTP.AccessToken
-login = do
-    state <- liftIO $ (sToBS . show) <$> (getStdRandom random :: IO Int)
-    liftIO $ print $ authorizationUrl digigpostKey `appendQueryParam` [("state", state)]
-    liftIO $ putStrLn "visit the url and paste code here: "
-    code <- liftIO getLine
-    let (url, body, credentials) = accessTokenUrlDigipost digigpostKey (sToBS code)
-    token <- liftIO $ doJSONPostRequest' url (body ++ [("state", state)]) (Just credentials)
-    liftIO $ print (token :: OAuth2Result AccessToken)
-    case token of
-      Right (AccessToken at _) -> return $ HTTP.AccessToken at "" --TODO fix refresh token
-      Left _ -> liftIO $ throwIO AuthFailedException
-
-loginUrl :: State -> URL
-loginUrl (State state) = authorizationUrl digigpostKey `appendQueryParam` [("state", sToBS state)]
 
 type URL = BS.ByteString
 
 newtype AuthCode = AuthCode String deriving (Eq, Show)
 newtype State = State String
+
+loginUrl :: State -> URL
+loginUrl (State state) = authorizationUrl digigpostKey `appendQueryParam` [("state", sToBS state)]
 
 accessToken :: State -> AuthCode -> IO (SyncResult HTTP.AccessToken)
 accessToken (State state) (AuthCode code) = do
@@ -67,7 +50,7 @@ loadAccessToken = catch readFileIfExists whenNotFound
     whenNotFound _ = return Nothing
 
 removeAccessToken :: IO ()
-removeAccessToken = getHomeDirectory >>= \userHome -> removeFile $ accessTokenFile userHome
+removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile
 
 accessTokenFile :: FilePath -> FilePath
 accessTokenFile userHome = combine userHome ".digipostarkiv"

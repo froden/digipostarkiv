@@ -9,9 +9,7 @@ import Control.Monad.Trans.Resource
 import Control.Monad.Trans.Either
 import System.FilePath.Posix
 import Data.List
-import Control.Concurrent
 import System.Directory
-import System.IO
 import Control.Exception
 
 import Api
@@ -24,20 +22,6 @@ import qualified Config as C
 import Oauth
 import Http (Session)
 
-main :: IO ()
-main = do
-    token <- runResourceT login
-    userHome <- getHomeDirectory
-    let config = C.defaultConfig userHome
-    putStrLn $ "Using syncDir: " ++ C.syncDir config
-    F.createSyncDir $ C.syncDir config
-    catch (sync config (Right token)) handleError
-
-loop :: C.Config -> Session -> IO ()
-loop config session = do
-    sync config session
-    threadDelay $ syncInterval (C.interval config)
-    loop config session
 
 guiSync :: IO (SyncResult ())
 guiSync = runEitherT $ do
@@ -82,31 +66,14 @@ sync config session = runResourceT $ do
     liftIO $ F.writeSyncFile syncFile newState
     liftIO $ debugLog "Finished"
 
-getUsername :: IO String
-getUsername = getInput "Fødselsnummer" True
+--syncLocal :: C.Config -> Session -> ResourceT IO ()
+--syncLocal config session = do
+--    let syncDir = C.syncDir config
+--    let syncFile = F.syncFile syncDir
+--    files <- liftIO $ F.existingFiles syncDir
+--    lastState <- liftIO $ F.readSyncFile syncFile
+--    let newFiles = files \\ lastState
 
-getPassword :: IO String
-getPassword = getInput "Passord" False
-
-getInput :: String -> Bool -> IO String
-getInput label echo = do
-    putStr $ label ++ ": "
-    hFlush stdout
-    input <- withEcho echo getLine
-    unless echo $ putChar '\n'
-    return input
-
-withEcho :: Bool -> IO a -> IO a
-withEcho echo action = do
-  old <- hGetEcho stdin
-  bracket_ (hSetEcho stdin echo) (hSetEcho stdin old) action
-
-syncInterval :: Maybe Int -> Int
-syncInterval Nothing = 10 * 1000000
-syncInterval (Just interval)
-    | interval < 5 = 5 * seconds
-    | otherwise = interval * seconds
-        where seconds = 1000000
 
 handleError :: HttpException -> IO ()
 handleError (StatusCodeException (Status 403 _) _ _) = putStrLn "Feil fødselsnummer eller passord"
