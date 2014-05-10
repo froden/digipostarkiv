@@ -20,7 +20,7 @@ import qualified Document as D
 import qualified File as F
 import qualified Config as C
 import Oauth
-import Http (Session)
+import Http (Session, AccessToken)
 
 
 guiSync :: IO (SyncResult ())
@@ -32,13 +32,18 @@ guiSync = runEitherT $ do
     token <- case at of
             Nothing -> left NotAuthenticated
             Just t -> right t
+    gsync config token
+
+gsync :: C.Config -> AccessToken -> EitherT SyncError IO ()
+gsync config token = do
     res <- liftIO $ try (sync config (Right token))
     case res of
-        Left (StatusCodeException (Status 403 _) _ _) -> do
-            liftIO $ putStrLn "403 status"
-            left NotAuthenticated
-        Left (StatusCodeException (Status 401 _) _ _) -> do
-            liftIO $ putStrLn "401 status"
+        Left (StatusCodeException (Status 403 _) hdrs _) -> do
+            liftIO $ putStrLn $ "403 status" ++ (show hdrs)
+            newToken <- refreshAccessToken token
+            gsync config newToken  --TODO: retry count??
+        Left (StatusCodeException (Status 401 _) hdrs _) -> do
+            liftIO $ putStrLn $ "401 status " ++ (show hdrs)
             left NotAuthenticated
         Left e -> left $ HttpFailed e
         Right _ -> right ()
@@ -65,19 +70,6 @@ sync config session = runResourceT $ do
     newState <- liftIO $ F.existingFiles syncDir
     liftIO $ F.writeSyncFile syncFile newState
     liftIO $ debugLog "Finished"
-
---syncLocal :: C.Config -> Session -> ResourceT IO ()
---syncLocal config session = do
---    let syncDir = C.syncDir config
---    let syncFile = F.syncFile syncDir
---    files <- liftIO $ F.existingFiles syncDir
---    lastState <- liftIO $ F.readSyncFile syncFile
---    let newFiles = files \\ lastState
-
-
-handleError :: HttpException -> IO ()
-handleError (StatusCodeException (Status 403 _) _ _) = putStrLn "Feil fødselsnummer eller passord"
-handleError e = throwIO e
 
 debugLog :: String -> IO ()
 debugLog = putStrLn
