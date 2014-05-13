@@ -29,6 +29,8 @@ type SyncResult a = Either SyncError a
 
 data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show)
 
+instance Error SyncError
+
 data ApiException = JsonParseException L.ByteString | AuthFailedException | Unknown deriving (Typeable)
 
 instance Exception ApiException

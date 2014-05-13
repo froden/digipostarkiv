@@ -6,7 +6,6 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
-import Control.Monad.Trans.Either
 import System.FilePath.Posix
 import Data.List
 import System.Directory
@@ -24,17 +23,17 @@ import Http (Session, AccessToken)
 
 
 guiSync :: IO (SyncResult ())
-guiSync = runEitherT $ do
+guiSync = runErrorT $ do
     userHome <- liftIO getHomeDirectory
     let config = C.defaultConfig userHome
     liftIO $ F.createSyncDir $ C.syncDir config
     at <- liftIO loadAccessToken
     token <- case at of
-            Nothing -> left NotAuthenticated
-            Just t -> right t
+            Nothing -> throwError NotAuthenticated
+            Just t -> return t
     gsync config token
 
-gsync :: C.Config -> AccessToken -> EitherT SyncError IO ()
+gsync :: C.Config -> AccessToken -> ErrorT SyncError IO ()
 gsync config token = do
     res <- liftIO $ try (sync config (Right token))
     case res of
@@ -44,9 +43,9 @@ gsync config token = do
             gsync config newToken  --TODO: retry count??
         Left (StatusCodeException (Status 401 _) hdrs _) -> do
             liftIO $ putStrLn $ "401 status " ++ (show hdrs)
-            left NotAuthenticated
-        Left e -> left $ HttpFailed e
-        Right _ -> right ()
+            throwError NotAuthenticated
+        Left e -> throwError $ HttpFailed e
+        Right _ -> return ()
 
 sync :: C.Config -> Session -> IO ()
 sync config session = runResourceT $ do

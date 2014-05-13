@@ -10,7 +10,7 @@ import Control.Exception
 import System.FilePath.Posix
 import System.Directory
 import Text.Read
-import Control.Monad.Trans.Either
+import Control.Monad.Error
 
 import Network.OAuth.OAuth2
 
@@ -35,8 +35,8 @@ accessToken (State state) (AuthCode code) = do
       Right _ -> return $ Left NotAuthenticated
       Left _ -> return $ Left NotAuthenticated
 
-refreshAccessToken :: HTTP.AccessToken -> EitherT SyncError IO HTTP.AccessToken
-refreshAccessToken oldToken = right oldToken
+refreshAccessToken :: HTTP.AccessToken -> ErrorT SyncError IO HTTP.AccessToken
+refreshAccessToken oldToken = return oldToken
 
 storeAccessToken :: HTTP.AccessToken -> IO ()
 storeAccessToken at = do
