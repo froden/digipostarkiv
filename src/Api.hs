@@ -31,13 +31,14 @@ data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show)
 
 instance Error SyncError
 
-data ApiException = JsonParseException L.ByteString | AuthFailedException | Unknown deriving (Typeable)
+data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
 
 instance Exception ApiException
 
 instance Show ApiException where
     show (JsonParseException cause) = "Failed to parse json response: " ++ unpack (L.toStrict cause)
     show AuthFailedException = "Wrong username or password"
+    show (NoLinkFoundException relation) = "No link found with relation: " ++ relation
     show Unknown = "Unknown error"
 
 data Auth = Auth { username :: String, password :: String } deriving (Show, Generic)
@@ -48,8 +49,14 @@ instance ToJSON Auth
 digipostBaseUrl :: String
 digipostBaseUrl = "https://www.digipost.no/post/api"
 
-decodeOrThrow :: FromJSON a => L.ByteString -> ResourceT IO a
-decodeOrThrow json = case decode json of
+linkOrException :: String -> [Link] -> IO Link
+linkOrException relation links =
+    case linkWithRel relation links of
+        Just l -> return l
+        Nothing -> throwIO $ NoLinkFoundException relation
+
+decodeOrException :: FromJSON a => L.ByteString -> ResourceT IO a
+decodeOrException json = case decode json of
     Nothing -> liftIO $ throwIO $ JsonParseException json
     Just decoded -> return decoded
 
@@ -70,7 +77,7 @@ authenticatePwd manager auth = do
     authRes <- httpLbs authReq manager
     return $ responseCookieJar authRes
 
-authRequest :: (Failure HttpException m, Functor m) => String -> Auth -> m Request
+authRequest :: String -> Auth -> ResourceT IO Request
 authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrl url
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
@@ -85,7 +92,7 @@ getDocuments :: Session -> Manager -> Link -> ResourceT IO D.Documents
 getDocuments session manager docsLink = getRequest session (uri docsLink) >>= getJson manager
 
 getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
-getJson manager req = httpLbs req manager >>= (decodeOrThrow . responseBody)
+getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
 downloadDocument :: Session -> Manager -> FilePath -> D.Document -> ResourceT IO ()
 downloadDocument session manager syncDir document = do
@@ -94,9 +101,9 @@ downloadDocument session manager syncDir document = do
     responseBody res $$+- sinkFile targetFile
     where targetFile = combine syncDir $ D.filename document
 
-downloadDocRequest :: (Failure HttpException m, Functor m) => Session -> D.Document -> m Request
-downloadDocRequest session document = linkM >>= requestFromLink
-    where linkM = linkWithRelM "document_content" links 
+downloadDocRequest :: Session -> D.Document -> ResourceT IO Request
+downloadDocRequest session document = contentLink >>= requestFromLink
+    where contentLink = liftIO $ linkOrException "document_content" links 
           requestFromLink = getRequest session . uri
           links = D.link document
 

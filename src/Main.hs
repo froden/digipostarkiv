@@ -13,7 +13,6 @@ import Control.Exception
 
 import Api
 import Root
-import Link
 import qualified Account as A
 import qualified Document as D
 import qualified File as F
@@ -51,7 +50,7 @@ sync :: C.Config -> Session -> IO ()
 sync config session = runResourceT $ do
     manager <- liftIO $ newManager conduitManagerSettings
     (root, account) <- getAccount manager session
-    archiveLink <- A.archiveLink account
+    archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
     documents <- getDocs manager session archiveLink
     let syncDir = C.syncDir config
     let syncFile = F.syncFile syncDir
@@ -63,7 +62,7 @@ sync config session = runResourceT $ do
                             "upload: [" ++ intercalate ", " newFiles ++ "]",
                             "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
     downloadAll session manager syncDir docsToDownload
-    let Just uploadLink = linkWithRel "upload_document" $ A.link account
+    uploadLink <- liftIO $ linkOrException "upload_document" $ A.link account
     uploadAll session manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
     liftIO $ F.deleteAll syncDir deletedFiles
     newState <- liftIO $ F.existingFiles syncDir
