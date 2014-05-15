@@ -38,9 +38,10 @@ accessToken (State state) (AuthCode code) = do
 refreshAccessToken :: HTTP.AccessToken -> ErrorT SyncError IO HTTP.AccessToken
 refreshAccessToken oldToken = do
     liftIO $ putStrLn $ "trying to refresh token " ++ (show oldToken)
-    newToken <- liftIO $ fetchRefreshTokenBasicAuth digigpostKey (HTTP.refreshToken oldToken)
+    let oldRt = HTTP.refreshToken oldToken
+    newToken <- liftIO $ fetchRefreshTokenBasicAuth digigpostKey oldRt
     case newToken of
-        Right (AccessToken at (Just rt)) -> return $ HTTP.AccessToken at rt
+        Right (AccessToken at _) -> return $ HTTP.AccessToken at oldRt --Is it ok to ignore the new (empty) rt?
         Right _ -> throwError NotAuthenticated
         Left _ -> throwError NotAuthenticated
 
