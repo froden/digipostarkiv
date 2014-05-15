@@ -31,12 +31,18 @@ accessToken (State state) (AuthCode code) = do
     let (url, body, credentials) = accessTokenUrlDigipost digigpostKey (sToBS code)
     token <- doJSONPostRequest' url (body ++ [("state", sToBS state)]) (Just credentials)
     case token of
-      Right (AccessToken at (Just rt)) -> return $ Right $ HTTP.AccessToken at rt
-      Right _ -> return $ Left NotAuthenticated
-      Left _ -> return $ Left NotAuthenticated
+        Right (AccessToken at (Just rt)) -> return $ Right $ HTTP.AccessToken at rt
+        Right _ -> return $ Left NotAuthenticated
+        Left _ -> return $ Left NotAuthenticated
 
 refreshAccessToken :: HTTP.AccessToken -> ErrorT SyncError IO HTTP.AccessToken
-refreshAccessToken oldToken = return oldToken
+refreshAccessToken oldToken = do
+    liftIO $ putStrLn $ "trying to refresh token " ++ (show oldToken)
+    newToken <- liftIO $ fetchRefreshTokenBasicAuth digigpostKey (HTTP.refreshToken oldToken)
+    case newToken of
+        Right (AccessToken at (Just rt)) -> return $ HTTP.AccessToken at rt
+        Right _ -> throwError NotAuthenticated
+        Left _ -> throwError NotAuthenticated
 
 storeAccessToken :: HTTP.AccessToken -> IO ()
 storeAccessToken at = do
@@ -45,13 +51,13 @@ storeAccessToken at = do
 
 loadAccessToken :: IO (Maybe HTTP.AccessToken)
 loadAccessToken = catch readFileIfExists whenNotFound
-  where 
-    readFileIfExists = do 
-      userHome <- getHomeDirectory
-      content <- readFile (accessTokenFile userHome) 
-      return $ readMaybe content
-    whenNotFound :: IOException -> IO (Maybe HTTP.AccessToken)
-    whenNotFound _ = return Nothing
+    where 
+        readFileIfExists = do 
+            userHome <- getHomeDirectory
+            content <- readFile (accessTokenFile userHome) 
+            return $ readMaybe content
+        whenNotFound :: IOException -> IO (Maybe HTTP.AccessToken)
+        whenNotFound _ = return Nothing
 
 removeAccessToken :: IO ()
 removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile
@@ -70,8 +76,8 @@ digigpostKey = OAuth2 { oauthClientId = "5f2b683e74a84b38aea54ee9d0080276"
 
 --due to bug in digipost
 accessTokenUrlDigipost :: OAuth2
-                  -> BS.ByteString
-                  -> (URI, PostBody, (BS.ByteString, BS.ByteString))
+                    -> BS.ByteString
+                    -> (URI, PostBody, (BS.ByteString, BS.ByteString))
 accessTokenUrlDigipost oa code = case accessTokenUrl' oa code (Just "code") of
       (uri, body) -> (uri, body, credentials)
       where credentials = (oauthClientId oa, oauthClientSecret oa)

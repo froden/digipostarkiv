@@ -38,7 +38,8 @@ gsync config token = do
     case res of
         Left (StatusCodeException (Status 403 _) hdrs _) -> do
             liftIO $ putStrLn $ "403 status" ++ (show hdrs)
-            newToken <- refreshAccessToken token
+            newToken <- refreshAccessToken token --TODO: exceptions?
+            liftIO $ storeAccessToken newToken
             gsync config newToken  --TODO: retry count??
         Left (StatusCodeException (Status 401 _) hdrs _) -> do
             liftIO $ putStrLn $ "401 status " ++ (show hdrs)
