@@ -8,9 +8,14 @@
 
 #import <Cocoa/Cocoa.h>
 #import "HsCocoa_stub.h"
+#import "Rts.h"
 
 int main(int argc, char * argv[])
 {
-    hs_init(&argc, &argv);
+    RtsConfig conf = defaultRtsConfig;
+    conf.rts_opts_enabled = RtsOptsAll;
+    conf.rts_opts = "-V0";
+    hs_init_ghc(&argc, &argv, conf);
+    
     return NSApplicationMain(argc, (const char **) argv);
 }
