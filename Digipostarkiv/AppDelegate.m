@@ -38,6 +38,7 @@
 }
 
 - (IBAction)exitApp:(id)sender {
+    hs_exit();
     [NSApp terminate:self];
 }
 
