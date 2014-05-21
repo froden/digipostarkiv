@@ -32,7 +32,7 @@
     
     [[NSTimer scheduledTimerWithTimeInterval:10.0
                                      target:self
-                                   selector:@selector(digipostSync:)
+                                   selector:@selector(sync:)
                                    userInfo:nil
                                     repeats:true] fire];
 }
@@ -43,9 +43,9 @@
 }
 
 - (IBAction)login:(id)sender {
-    char *cAuthUrl = authUrl("state");
+    char *cAuthUrl = hs_authUrl("state");
     NSString *authUrl = [NSString stringWithFormat:@"%s" , cAuthUrl];
-    NSLog(@"%@", authUrl);
+    //NSLog(@"%@", authUrl);
     NSURL *url = [NSURL URLWithString:authUrl];
     NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
     [NSApp activateIgnoringOtherApps:YES];
@@ -54,7 +54,7 @@
 }
 
 - (IBAction)logout:(id)sender {
-    logout();
+    hs_logout();
     loggedIn = false;
 }
 
@@ -62,14 +62,14 @@
 {
     NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
     NSURL *url = [NSURL URLWithString:urlString];
-    NSLog(@"%@", url);
     NSString *authCode = [self parseCode:url];
-    int result = accessToken("state", (char*)[authCode UTF8String]);
-    NSLog(@"%i", result);
+    int result = hs_accessToken("state", (char*)[authCode UTF8String]);
     
     if (result == 0) {
         loggedIn = true;
         [self.window close];
+    } else {
+        NSLog(@"Error from hs_accessToken: %i", result);
     }
 }
 
@@ -115,15 +115,18 @@
         return;
     }
     syncInProgress = true;
-    int result = syncNow();
-    NSLog(@"Syncresult: %i", result);
+    int result = hs_sync();
     if (result == 0) {
         loggedIn = true;
-    } else if (result == 1) {
-        loggedIn = false;
-        if (presentLogin) {
-            presentLogin = false;
-            [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+    } else {
+        if (result == 1) {
+            loggedIn = false;
+            if (presentLogin) {
+                presentLogin = false;
+                [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+            }
+        } else {
+            NSLog(@"Unhandled syncresult: %i", result);
         }
     }
     syncInProgress = false;

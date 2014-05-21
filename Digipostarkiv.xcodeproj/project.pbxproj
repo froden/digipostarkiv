@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */; };
 		DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
 		DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF631906F23A008C83D2 /* InfoPlist.strings */; };
 		DEB1EF671906F23A008C83D2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF661906F23A008C83D2 /* main.m */; };
@@ -19,7 +20,6 @@
 		DEB1EF831906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF811906F23A008C83D2 /* InfoPlist.strings */; };
 		DEB1EF851906F23A008C83D2 /* DigipostarkivTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */; };
 		DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD31909082700F7C9FD /* liba.a */; };
-		DEE5DCD619090FB300F7C9FD /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD519090FB300F7C9FD /* WebKit.framework */; };
 		DEFFDED8191C1627009A77BF /* digipostbw.png in Resources */ = {isa = PBXBuildFile; fileRef = DEFFDED7191C1627009A77BF /* digipostbw.png */; };
 		DEFFDEDC191CD03D009A77BF /* digipostbw-white.png in Resources */ = {isa = PBXBuildFile; fileRef = DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */; };
 /* End PBXBuildFile section */
@@ -35,6 +35,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Digipostarkiv.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		DEB1EF5D1906F23A008C83D2 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -55,7 +56,6 @@
 		DEB1EF821906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DigipostarkivTests.m; sourceTree = "<group>"; };
 		DEE5DCD31909082700F7C9FD /* liba.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liba.a; sourceTree = "<group>"; };
-		DEE5DCD519090FB300F7C9FD /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		DEFFDED7191C1627009A77BF /* digipostbw.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digipostbw.png; sourceTree = "<group>"; };
 		DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipostbw-white.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -65,7 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DEE5DCD619090FB300F7C9FD /* WebKit.framework in Frameworks */,
+				DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */,
 				DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */,
 				DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */,
 			);
@@ -105,7 +105,7 @@
 		DEB1EF591906F23A008C83D2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				DEE5DCD519090FB300F7C9FD /* WebKit.framework */,
+				DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */,
 				DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */,
 				DEB1EF791906F23A008C83D2 /* XCTest.framework */,
 				DEB1EF5C1906F23A008C83D2 /* Other Frameworks */,
