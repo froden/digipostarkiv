@@ -44,12 +44,12 @@ gsync config token = do
     res <- liftIO $ try (sync config (Right token))
     case res of
         Left (StatusCodeException (Status 403 _) hdrs _) -> do
-            liftIO $ putStrLn $ "403 status" ++ (show hdrs)
+            liftIO $ debugLog $ "403 status" ++ (show hdrs)
             newToken <- refreshAccessToken token --TODO: exceptions?
             liftIO $ storeAccessToken newToken
             gsync config newToken  --TODO: retry count??
         Left (StatusCodeException (Status 401 _) hdrs _) -> do
-            liftIO $ putStrLn $ "401 status " ++ (show hdrs)
+            liftIO $ debugLog $ "401 status " ++ (show hdrs)
             throwError NotAuthenticated
         Left e -> throwError $ HttpFailed e
         Right _ -> return ()
@@ -87,3 +87,4 @@ sync config session = runResourceT $ do
 
 debugLog :: String -> IO ()
 debugLog = putStrLn
+--debugLog _ = return ()
