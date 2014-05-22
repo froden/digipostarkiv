@@ -15,6 +15,7 @@
     BOOL syncInProgress;
     BOOL presentLogin;
     BOOL loggedIn;
+    long runNumber;
 }
 
 @property (assign) IBOutlet NSWindow *window;

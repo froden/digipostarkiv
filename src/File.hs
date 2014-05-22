@@ -17,10 +17,10 @@ filterSpecialFiles = removeDirs . removeHidden
           hidden = isPrefixOf "."
 
 readSyncFile :: FilePath -> IO [FilePath]
-readSyncFile syncfile = doesFileExist syncfile >>= doRead
+readSyncFile syncfile = doesFileExist syncfile >>= readIfExists
 	where 
-		doRead False = return []
-		doRead True = (fmap lines . readFile) syncfile
+		readIfExists False = return []
+		readIfExists True = (fmap lines . readFile) syncfile
 
 
 writeSyncFile :: FilePath -> [FilePath] -> IO ()
@@ -38,9 +38,6 @@ syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, files
 
 deleteAll :: FilePath -> [FilePath] -> IO ()
 deleteAll syncDir = void . mapM (removeFile . combine syncDir)
-
-newFiles :: [FilePath] -> [FilePath] -> [FilePath]
-newFiles lastState files = lastState \\ files
 
 createSyncDir :: FilePath -> IO ()
 createSyncDir = createDirectoryIfMissing True

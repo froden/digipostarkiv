@@ -19,6 +19,7 @@
     presentLogin = true;
     syncInProgress = false;
     loggedIn = false;
+    runNumber = 0L;
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [statusItem setMenu:_statusMenu];
@@ -115,7 +116,7 @@
         return;
     }
     syncInProgress = true;
-    int result = hs_sync();
+    int result = hs_sync(runNumber ++);
     if (result == 0) {
         loggedIn = true;
     } else {

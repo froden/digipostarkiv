@@ -21,16 +21,23 @@ import Oauth
 import Http (Session, AccessToken)
 
 
-guiSync :: IO (SyncResult ())
-guiSync = runErrorT $ do
+guiSync :: Int -> IO (SyncResult ())
+guiSync runNumber = runErrorT $ do
     userHome <- liftIO getHomeDirectory
     let config = C.defaultConfig userHome
     liftIO $ F.createSyncDir $ C.syncDir config
-    at <- liftIO loadAccessToken
-    token <- case at of
-            Nothing -> throwError NotAuthenticated
-            Just t -> return t
-    gsync config token
+    hasLocalChanges <- liftIO $ localChange config
+    let fullSync = runNumber `mod` 6 == 0
+    if hasLocalChanges || fullSync then
+        do
+            at <- liftIO loadAccessToken
+            token <- case at of
+                    Nothing -> throwError NotAuthenticated
+                    Just t -> return t
+            gsync config token
+    else
+        return ()
+
 
 gsync :: C.Config -> AccessToken -> ErrorT SyncError IO ()
 gsync config token = do
@@ -46,6 +53,14 @@ gsync config token = do
             throwError NotAuthenticated
         Left e -> throwError $ HttpFailed e
         Right _ -> return ()
+
+localChange :: C.Config -> IO Bool
+localChange config = do
+    let syncDir = C.syncDir config
+    let syncFile = F.syncFile syncDir
+    files <- F.existingFiles syncDir
+    lastState <- F.readSyncFile syncFile
+    return $ not $ lastState == files
 
 sync :: C.Config -> Session -> IO ()
 sync config session = runResourceT $ do

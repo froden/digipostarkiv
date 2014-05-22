@@ -10,7 +10,7 @@ import Api
 
 foreign export ccall hs_authUrl :: CString -> IO CString
 foreign export ccall hs_accessToken :: CString -> CString -> IO CInt
-foreign export ccall hs_sync :: IO CInt
+foreign export ccall hs_sync :: Int -> IO CInt
 foreign export ccall hs_logout :: IO ()
 
 
@@ -29,9 +29,9 @@ hs_accessToken s c = do
 		Left NotAuthenticated -> return 1
 		Left _ -> return 99
 
-hs_sync :: IO CInt
-hs_sync = do
-	result <- guiSync
+hs_sync :: Int -> IO CInt
+hs_sync runNumber = do
+	result <- guiSync runNumber
 	case result of
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
