@@ -28,8 +28,8 @@ loginUrl (State state) = authorizationUrl digigpostKey `appendQueryParam` [("sta
 
 accessToken :: State -> AuthCode -> IO (SyncResult HTTP.AccessToken)
 accessToken (State state) (AuthCode code) = do
-    let (url, body, credentials) = accessTokenUrlDigipost digigpostKey (sToBS code)
-    token <- doJSONPostRequest' url (body ++ [("state", sToBS state)]) (Just credentials)
+    let (url, body) = accessTokenUrl' digigpostKey (sToBS code) (Just "code")
+    token <- doJSONPostRequest digigpostKey url (body ++ [("state", sToBS state)])
     case token of
         Right (AccessToken at (Just rt)) -> return $ Right $ HTTP.AccessToken at rt
         Right _ -> return $ Left NotAuthenticated
@@ -39,7 +39,7 @@ refreshAccessToken :: HTTP.AccessToken -> ErrorT SyncError IO HTTP.AccessToken
 refreshAccessToken oldToken = do
     liftIO $ putStrLn $ "trying to refresh token " ++ (show oldToken)
     let oldRt = HTTP.refreshToken oldToken
-    newToken <- liftIO $ fetchRefreshTokenBasicAuth digigpostKey oldRt
+    newToken <- liftIO $ fetchRefreshToken digigpostKey oldRt
     case newToken of
         Right (AccessToken at _) -> return $ HTTP.AccessToken at oldRt --Is it ok to ignore the new (empty) rt?
         Right _ -> throwError NotAuthenticated
@@ -73,16 +73,6 @@ digigpostKey = OAuth2 { oauthClientId = "5f2b683e74a84b38aea54ee9d0080276"
                       , oauthOAuthorizeEndpoint = "https://www.digipost.no/post/api/oauth/authorize/new"
                       , oauthAccessTokenEndpoint = "https://www.digipost.no/post/api/oauth/accesstoken"
                       }
-
-
---due to bug in digipost
-accessTokenUrlDigipost :: OAuth2
-                    -> BS.ByteString
-                    -> (URI, PostBody, (BS.ByteString, BS.ByteString))
-accessTokenUrlDigipost oa code = case accessTokenUrl' oa code (Just "code") of
-      (uri, body) -> (uri, body, credentials)
-      where credentials = (oauthClientId oa, oauthClientSecret oa)
-
 
 sToBS :: String -> BS.ByteString
 sToBS = T.encodeUtf8 . T.pack
