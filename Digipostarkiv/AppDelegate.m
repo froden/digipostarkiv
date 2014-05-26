@@ -16,9 +16,7 @@
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    presentLogin = true;
     syncInProgress = false;
-    loggedIn = false;
     runNumber = 0L;
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
@@ -31,11 +29,7 @@
     [statusItem setAlternateImage:altStatusImage];
     [statusItem setHighlightMode:YES];
     
-    [[NSTimer scheduledTimerWithTimeInterval:10.0
-                                     target:self
-                                   selector:@selector(sync:)
-                                   userInfo:nil
-                                    repeats:true] fire];
+    [self startSyncTimer];
 }
 
 - (IBAction)exitApp:(id)sender {
@@ -54,8 +48,8 @@
 }
 
 - (IBAction)logout:(id)sender {
+    [self stopSyncTimer];
     hs_logout();
-    loggedIn = false;
 }
 
 - (IBAction)openArchiveFolder:(id)sender {
@@ -73,7 +67,7 @@
     int result = hs_accessToken("state", (char*)[authCode UTF8String]);
     
     if (result == 0) {
-        loggedIn = true;
+        [self startSyncTimer];
         [self.window close];
     } else {
         NSLog(@"Error from hs_accessToken: %i", result);
@@ -99,10 +93,16 @@
 }
 
 - (IBAction)sync:(id)sender {
-    [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
+    if (hs_loggedIn()) {
+        [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
+    } else {
+        [self stopSyncTimer];
+        [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+    }
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item {
+    BOOL loggedIn = hs_loggedIn();
     SEL action = [item action];
     if (action == @selector(login:)) {
         [item setHidden:loggedIn];
@@ -115,6 +115,23 @@
     }
 }
 
+- (void)startSyncTimer {
+    if (syncTimer == nil || ![syncTimer isValid]) {
+        syncTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
+                                                    target:self
+                                                    selector:@selector(sync:)
+                                                    userInfo:nil
+                                                    repeats:true];
+    }
+    [syncTimer fire];
+}
+
+- (void)stopSyncTimer {
+    if (syncTimer != nil && [syncTimer isValid]) {
+        [syncTimer invalidate];
+        syncTimer = nil;
+    }
+}
 
 
 - (void)digipostSync:(NSTimer*)timer {
@@ -123,15 +140,9 @@
     }
     syncInProgress = true;
     int result = hs_sync(runNumber ++);
-    if (result == 0) {
-        loggedIn = true;
-    } else {
+    if (result != 0) {
         if (result == 1) {
-            loggedIn = false;
-            if (presentLogin) {
-                presentLogin = false;
-                [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
-            }
+            [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
         } else {
             NSLog(@"Unhandled syncresult: %i", result);
         }

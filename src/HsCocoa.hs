@@ -3,6 +3,7 @@ module HsCocoa where
 import Foreign.C
 
 import Data.ByteString.Char8
+import Data.Maybe
 
 import qualified Oauth as O
 import Main
@@ -12,6 +13,7 @@ foreign export ccall hs_authUrl :: CString -> IO CString
 foreign export ccall hs_accessToken :: CString -> CString -> IO CInt
 foreign export ccall hs_sync :: Int -> IO CInt
 foreign export ccall hs_logout :: IO ()
+foreign export ccall hs_loggedIn :: IO Bool
 
 
 hs_authUrl :: CString -> IO CString
@@ -39,5 +41,8 @@ hs_sync runNumber = do
 
 hs_logout :: IO ()
 hs_logout = O.removeAccessToken
+
+hs_loggedIn :: IO Bool
+hs_loggedIn = fmap isJust O.loadAccessToken
 
 

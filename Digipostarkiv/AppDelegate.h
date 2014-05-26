@@ -11,10 +11,9 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     NSStatusItem *statusItem;
+    NSTimer *syncTimer;
     
     BOOL syncInProgress;
-    BOOL presentLogin;
-    BOOL loggedIn;
     long runNumber;
 }
 
@@ -33,5 +32,8 @@
 - (NSString*)parseCode:(NSURL*)url;
 
 - (void)digipostSync:(NSTimer*)timer;
+
+- (void)stopSyncTimer;
+- (void)startSyncTimer;
 
 @end

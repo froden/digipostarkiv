@@ -706,10 +706,10 @@
                 <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <webView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HcF-40-ePl">
+                    <webView fixedFrame="YES" maintainsBackForwardList="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HcF-40-ePl">
                         <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <webPreferences key="preferences" defaultFontSize="12" defaultFixedFontSize="12">
+                        <webPreferences key="preferences" defaultFontSize="12" defaultFixedFontSize="12" plugInsEnabled="NO" javaEnabled="NO">
                             <nil key="identifier"/>
                         </webPreferences>
                     </webView>
