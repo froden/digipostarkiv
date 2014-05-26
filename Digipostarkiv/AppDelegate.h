@@ -26,6 +26,8 @@
 
 - (IBAction)login:(id)sender;
 
+- (IBAction)openArchiveFolder:(id)sender;
+
 - (IBAction)sync:(id)sender;
 
 - (NSString*)parseCode:(NSURL*)url;

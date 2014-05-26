@@ -46,7 +46,6 @@
 - (IBAction)login:(id)sender {
     char *cAuthUrl = hs_authUrl("state");
     NSString *authUrl = [NSString stringWithFormat:@"%s" , cAuthUrl];
-    //NSLog(@"%@", authUrl);
     NSURL *url = [NSURL URLWithString:authUrl];
     NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
     [NSApp activateIgnoringOtherApps:YES];
@@ -58,6 +57,13 @@
     hs_logout();
     loggedIn = false;
 }
+
+- (IBAction)openArchiveFolder:(id)sender {
+    NSString *folderPath = [NSHomeDirectory() stringByAppendingString:@"/Digipostarkiv"];
+    NSURL *folderURL = [NSURL fileURLWithPath: folderPath];
+    [[NSWorkspace sharedWorkspace] openURL: folderURL];
+}
+
 
 - (void)handleURLEvent:(NSAppleEventDescriptor*)event withReplyEvent:(NSAppleEventDescriptor*)replyEvent
 {

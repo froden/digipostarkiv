@@ -671,6 +671,12 @@
         </menu>
         <menu id="vvB-te-Phl">
             <items>
+                <menuItem title="Åpne Digipostarkiv i Finder" id="inx-IO-CRF">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="openArchiveFolder:" target="Voe-Tx-rLC" id="Geo-FK-4aW"/>
+                    </connections>
+                </menuItem>
                 <menuItem title="Logg inn" id="Ceh-0h-cdn">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
