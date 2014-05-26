@@ -69,6 +69,7 @@
     if (result == 0) {
         [self startSyncTimer];
         [self.window close];
+        [self.webView setMainFrameURL:@"about:blank"];
     } else {
         NSLog(@"Error from hs_accessToken: %i", result);
     }
