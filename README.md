@@ -24,3 +24,4 @@ Simple work in progress file sync client for files uploaded to Digipost
 ### TODO
 * Handle updated files
 * Sync status indication
+* Folders
