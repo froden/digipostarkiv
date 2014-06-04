@@ -21,27 +21,27 @@ import Oauth
 import Http (Session, AccessToken)
 
 
-guiSync :: Int -> IO (SyncResult ())
-guiSync runNumber = runErrorT $ do
-    userHome <- liftIO getHomeDirectory
+guiSync :: Int -> IO ()
+guiSync runNumber = do
+    userHome <- getHomeDirectory
     let config = C.defaultConfig userHome
-    liftIO $ F.createSyncDir $ C.syncDir config
-    hasLocalChanges <- liftIO $ localChange config
+    F.createSyncDir $ C.syncDir config
+    hasLocalChanges <- localChange config
     let fullSync = runNumber `mod` 6 == 0
     if hasLocalChanges || fullSync then
         do
-            at <- liftIO loadAccessToken
+            at <- loadAccessToken
             token <- case at of
-                    Nothing -> throwError NotAuthenticated
+                    Nothing -> throwIO NotAuthenticated
                     Just t -> return t
             gsync config token
     else
         return ()
 
 
-gsync :: C.Config -> AccessToken -> ErrorT SyncError IO ()
+gsync :: C.Config -> AccessToken -> IO ()
 gsync config token = do
-    res <- liftIO $ try (sync config (Right token))
+    res <- try (sync config (Right token))
     case res of
         Left (StatusCodeException (Status 403 _) hdrs _) -> do
             liftIO $ debugLog $ "403 status" ++ (show hdrs)
@@ -50,8 +50,8 @@ gsync config token = do
             gsync config newToken  --TODO: retry count??
         Left (StatusCodeException (Status 401 _) hdrs _) -> do
             liftIO $ debugLog $ "401 status " ++ (show hdrs)
-            throwError NotAuthenticated
-        Left e -> throwError $ HttpFailed e
+            throwIO NotAuthenticated
+        Left e -> throwIO $ HttpFailed e
         Right _ -> return ()
 
 localChange :: C.Config -> IO Bool

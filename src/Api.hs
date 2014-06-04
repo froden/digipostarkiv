@@ -25,11 +25,9 @@ import Root
 import qualified Document as D
 import qualified Account as A
 
-type SyncResult a = Either SyncError a
+data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show, Typeable)
 
-data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show)
-
-instance Error SyncError
+instance Exception SyncError
 
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
 

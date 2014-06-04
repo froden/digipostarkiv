@@ -10,7 +10,6 @@ import Control.Exception
 import System.FilePath.Posix
 import System.Directory
 import Text.Read
-import Control.Monad.Error
 
 import Network.OAuth.OAuth2
 
@@ -26,24 +25,23 @@ newtype State = State String
 loginUrl :: State -> URL
 loginUrl (State state) = authorizationUrl digigpostKey `appendQueryParam` [("state", sToBS state)]
 
-accessToken :: State -> AuthCode -> IO (SyncResult HTTP.AccessToken)
+accessToken :: State -> AuthCode -> IO HTTP.AccessToken
 accessToken (State state) (AuthCode code) = do
     let (url, body) = accessTokenUrl' digigpostKey (sToBS code) (Just "code")
     token <- doJSONPostRequest digigpostKey url (body ++ [("state", sToBS state)])
     case token of
-        Right (AccessToken at (Just rt)) -> return $ Right $ HTTP.AccessToken at rt
-        Right _ -> return $ Left NotAuthenticated
-        Left _ -> return $ Left NotAuthenticated
+        Right (AccessToken at (Just rt)) -> return $ HTTP.AccessToken at rt
+        Right _ -> throwIO NotAuthenticated
+        Left _ -> throwIO NotAuthenticated
 
-refreshAccessToken :: HTTP.AccessToken -> ErrorT SyncError IO HTTP.AccessToken
+refreshAccessToken :: HTTP.AccessToken -> IO HTTP.AccessToken
 refreshAccessToken oldToken = do
-    liftIO $ putStrLn $ "trying to refresh token " ++ (show oldToken)
+    putStrLn $ "trying to refresh token " ++ (show oldToken)
     let oldRt = HTTP.refreshToken oldToken
-    newToken <- liftIO $ fetchRefreshToken digigpostKey oldRt
+    newToken <- fetchRefreshToken digigpostKey oldRt
     case newToken of
-        Right (AccessToken at _) -> return $ HTTP.AccessToken at oldRt --Is it ok to ignore the new (empty) rt?
-        Right _ -> throwError NotAuthenticated
-        Left _ -> throwError NotAuthenticated
+        Right (AccessToken at _) -> return $ HTTP.AccessToken at oldRt
+        Left _ -> throwIO NotAuthenticated
 
 storeAccessToken :: HTTP.AccessToken -> IO ()
 storeAccessToken at = do
