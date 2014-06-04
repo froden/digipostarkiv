@@ -8,8 +8,8 @@ import Control.Exception
 
 import qualified Oauth as O
 import Main
-import Api
 import Http
+import Error
 
 foreign export ccall hs_authUrl :: CString -> IO CString
 foreign export ccall hs_accessToken :: CString -> CString -> IO CInt

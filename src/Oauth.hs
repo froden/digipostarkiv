@@ -13,7 +13,7 @@ import Text.Read
 
 import Network.OAuth.OAuth2
 
-import Api
+import Error
 import qualified Http as HTTP
 
 

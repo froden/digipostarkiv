@@ -19,6 +19,7 @@ import qualified File as F
 import qualified Config as C
 import Oauth
 import Http (Session, AccessToken)
+import Error
 
 
 guiSync :: Int -> IO ()

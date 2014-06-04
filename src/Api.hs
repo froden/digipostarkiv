@@ -25,9 +25,6 @@ import Root
 import qualified Document as D
 import qualified Account as A
 
-data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show, Typeable)
-
-instance Exception SyncError
 
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
 
