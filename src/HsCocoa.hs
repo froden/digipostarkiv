@@ -11,20 +11,20 @@ import Sync
 import Http
 import Error
 
-foreign export ccall hs_authUrl :: CString -> IO CString
-foreign export ccall hs_accessToken :: CString -> CString -> IO CInt
-foreign export ccall hs_sync :: Int -> IO CInt
-foreign export ccall hs_logout :: IO ()
-foreign export ccall hs_loggedIn :: IO Bool
+foreign export ccall hsAuthUrl :: CString -> IO CString
+foreign export ccall hsAccessToken :: CString -> CString -> IO CInt
+foreign export ccall hsSync :: Int -> IO CInt
+foreign export ccall hsLogout :: IO ()
+foreign export ccall hsLoggedIn :: IO Bool
 
 
-hs_authUrl :: CString -> IO CString
-hs_authUrl s = do
+hsAuthUrl :: CString -> IO CString
+hsAuthUrl s = do
 	state <- peekCString s
 	newCString $ unpack $ O.loginUrl (O.State state)
 
-hs_accessToken :: CString -> CString -> IO CInt
-hs_accessToken s c = do
+hsAccessToken :: CString -> CString -> IO CInt
+hsAccessToken s c = do
 	state <- peekCString s
 	code <- peekCString c
 	result <- try $ O.accessToken (O.State state) (O.AuthCode code)
@@ -33,18 +33,18 @@ hs_accessToken s c = do
 		Left NotAuthenticated -> return 1
 		Left _ -> return 99
 
-hs_sync :: Int -> IO CInt
-hs_sync runNumber = do
+hsSync :: Int -> IO CInt
+hsSync runNumber = do
 	result <- try $ guiSync runNumber
 	case result of
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
 		Left (HttpFailed e) -> print e >> return 99
 
-hs_logout :: IO ()
-hs_logout = O.removeAccessToken
+hsLogout :: IO ()
+hsLogout = O.removeAccessToken
 
-hs_loggedIn :: IO Bool
-hs_loggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.AccessToken))
+hsLoggedIn :: IO Bool
+hsLoggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.AccessToken))
 
 

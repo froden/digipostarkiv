@@ -38,7 +38,7 @@
 }
 
 - (IBAction)login:(id)sender {
-    char *cAuthUrl = hs_authUrl("state");
+    char *cAuthUrl = hsAuthUrl("state");
     NSString *authUrl = [NSString stringWithFormat:@"%s" , cAuthUrl];
     NSURL *url = [NSURL URLWithString:authUrl];
     NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
@@ -49,7 +49,7 @@
 
 - (IBAction)logout:(id)sender {
     [self stopSyncTimer];
-    hs_logout();
+    hsLogout();
 }
 
 - (IBAction)openArchiveFolder:(id)sender {
@@ -64,7 +64,7 @@
     NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
     NSURL *url = [NSURL URLWithString:urlString];
     NSString *authCode = [self parseCode:url];
-    int result = hs_accessToken("state", (char*)[authCode UTF8String]);
+    int result = hsAccessToken("state", (char*)[authCode UTF8String]);
     
     if (result == 0) {
         [self startSyncTimer];
@@ -96,7 +96,7 @@
 //TODO: synk lokalt eller full styres herfra
 //TODO: legge på blått ikon når det faktisk er noe å synke?
 - (IBAction)sync:(id)sender {
-    if (hs_loggedIn()) {
+    if (hsLoggedIn()) {
         [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
     } else {
         [self stopSyncTimer];
@@ -105,7 +105,7 @@
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item {
-    BOOL loggedIn = hs_loggedIn();
+    BOOL loggedIn = hsLoggedIn();
     SEL action = [item action];
     if (action == @selector(login:)) {
         [item setHidden:loggedIn];
@@ -142,7 +142,7 @@
         return;
     }
     syncInProgress = true;
-    int result = hs_sync(runNumber ++);
+    int result = hsSync(runNumber ++);
     if (result != 0) {
         if (result == 1) {
             [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
