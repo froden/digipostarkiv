@@ -7,7 +7,7 @@ import Data.Either
 import Control.Exception
 
 import qualified Oauth as O
-import Main
+import Sync
 import Http
 import Error
 

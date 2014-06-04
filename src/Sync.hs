@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Sync where
 
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
