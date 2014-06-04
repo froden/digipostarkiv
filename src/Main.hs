@@ -29,15 +29,9 @@ guiSync runNumber = do
     hasLocalChanges <- localChange config
     let fullSync = runNumber `mod` 6 == 0
     if hasLocalChanges || fullSync then
-        do
-            at <- loadAccessToken
-            token <- case at of
-                    Nothing -> throwIO NotAuthenticated
-                    Just t -> return t
-            gsync config token
+        loadAccessToken >>= gsync config
     else
         return ()
-
 
 gsync :: C.Config -> AccessToken -> IO ()
 gsync config token = do

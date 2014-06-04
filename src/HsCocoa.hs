@@ -3,12 +3,13 @@ module HsCocoa where
 import Foreign.C
 
 import Data.ByteString.Char8
-import Data.Maybe
+import Data.Either
 import Control.Exception
 
 import qualified Oauth as O
 import Main
 import Api
+import Http
 
 foreign export ccall hs_authUrl :: CString -> IO CString
 foreign export ccall hs_accessToken :: CString -> CString -> IO CInt
@@ -44,6 +45,6 @@ hs_logout :: IO ()
 hs_logout = O.removeAccessToken
 
 hs_loggedIn :: IO Bool
-hs_loggedIn = fmap isJust O.loadAccessToken
+hs_loggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.AccessToken))
 
 

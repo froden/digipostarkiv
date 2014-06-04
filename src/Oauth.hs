@@ -48,15 +48,17 @@ storeAccessToken at = do
     userHome <- getHomeDirectory
     writeFile (accessTokenFile userHome) $ show at
 
-loadAccessToken :: IO (Maybe HTTP.AccessToken)
+loadAccessToken :: IO HTTP.AccessToken
 loadAccessToken = catch readFileIfExists whenNotFound
     where 
         readFileIfExists = do 
             userHome <- getHomeDirectory
             content <- readFile (accessTokenFile userHome) 
-            return $ readMaybe content
-        whenNotFound :: IOException -> IO (Maybe HTTP.AccessToken)
-        whenNotFound _ = return Nothing
+            case readMaybe content of
+              Just at -> return at
+              Nothing -> throwIO NotAuthenticated
+        whenNotFound :: IOException -> IO HTTP.AccessToken
+        whenNotFound _ = throwIO NotAuthenticated
 
 removeAccessToken :: IO ()
 removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile
