@@ -16,54 +16,67 @@ import Root
 import qualified Account as A
 import qualified Document as D
 import qualified File as F
-import qualified Config as C
 import Oauth
-import Http (Session, AccessToken)
+import Http (AccessToken)
 import Error
 
 
 guiSync :: Int -> IO ()
 guiSync runNumber = do
-    userHome <- getHomeDirectory
-    let config = C.defaultConfig userHome
-    F.createSyncDir $ C.syncDir config
-    hasLocalChanges <- localChange config
+    syncDir <- getUserSyncDir
+    F.createSyncDir syncDir
+    hasLocalChanges <- checkLocalChange
     let fullSync = runNumber `mod` 6 == 0
-    if hasLocalChanges || fullSync then
-        loadAccessToken >>= gsync config
-    else
-        return ()
+    when (hasLocalChanges || fullSync) sync
 
-gsync :: C.Config -> AccessToken -> IO ()
-gsync config token = do
-    res <- try (sync config (Right token))
-    case res of
-        Left (StatusCodeException (Status 403 _) hdrs _) -> do
-            liftIO $ debugLog $ "403 status" ++ (show hdrs)
+handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
+handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
+    where
+        handleException (StatusCodeException (Status 403 _) hdrs _) = do
+            debugLog $ "403 status" ++ show hdrs
             newToken <- refreshAccessToken token --TODO: exceptions?
-            liftIO $ storeAccessToken newToken
-            gsync config newToken  --TODO: retry count??
-        Left (StatusCodeException (Status 401 _) hdrs _) -> do
-            liftIO $ debugLog $ "401 status " ++ (show hdrs)
+            storeAccessToken newToken
+            accessFunc newToken  --TODO: retry count??
+        handleException (StatusCodeException (Status 401 _) hdrs _) = do
+            debugLog $ "401 status " ++ show hdrs
             throwIO NotAuthenticated
-        Left e -> throwIO $ HttpFailed e
-        Right _ -> return ()
+        handleException e = throwIO $ HttpFailed e
 
-localChange :: C.Config -> IO Bool
-localChange config = do
-    let syncDir = C.syncDir config
+
+checkLocalChange :: IO Bool
+checkLocalChange = do
+    syncDir <- getOrCreateSyncDir
     let syncFile = F.syncFile syncDir
-    files <- F.existingFiles syncDir
     lastState <- F.readSyncFile syncFile
-    return $ not $ lastState == files
+    files <- F.existingFiles syncDir
+    return $ lastState /= files
 
-sync :: C.Config -> Session -> IO ()
-sync config session = runResourceT $ do
+checkRemoteChange :: IO Bool
+checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
+
+checkRemoteChange' :: AccessToken -> IO Bool
+checkRemoteChange' token = runResourceT $ do
+    syncDir <- liftIO getOrCreateSyncDir
     manager <- liftIO $ newManager conduitManagerSettings
-    (root, account) <- getAccount manager session
+    (_, account) <- getAccount manager token
     archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
-    documents <- getDocs manager session archiveLink
-    let syncDir = C.syncDir config
+    documents <- getDocs manager token archiveLink
+    let syncFile = F.syncFile syncDir
+    files <- liftIO $ F.existingFiles syncDir
+    lastState <- liftIO $ F.readSyncFile syncFile
+    let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
+    return $ not $ null docsToDownload && null newFiles && null deletedFiles
+
+sync :: IO ()
+sync = loadAccessToken >>= handleTokenRefresh sync'
+
+sync' :: AccessToken -> IO ()
+sync' token = runResourceT $ do
+    syncDir <- liftIO getOrCreateSyncDir
+    manager <- liftIO $ newManager conduitManagerSettings
+    (root, account) <- getAccount manager token
+    archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
+    documents <- getDocs manager token archiveLink
     let syncFile = F.syncFile syncDir
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
@@ -72,13 +85,24 @@ sync config session = runResourceT $ do
                             "download: [" ++ intercalate ", " (map D.filename docsToDownload) ++ "]",
                             "upload: [" ++ intercalate ", " newFiles ++ "]",
                             "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
-    downloadAll session manager syncDir docsToDownload
+    downloadAll token manager syncDir docsToDownload
     uploadLink <- liftIO $ linkOrException "upload_document" $ A.link account
-    uploadAll session manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
+    uploadAll token manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
     liftIO $ F.deleteAll syncDir deletedFiles
     newState <- liftIO $ F.existingFiles syncDir
     liftIO $ F.writeSyncFile syncFile newState
     liftIO $ debugLog "Finished"
+
+getUserSyncDir :: IO FilePath
+getUserSyncDir = do
+    homedir <- getHomeDirectory
+    return $ combine homedir "Digipostarkiv"
+
+getOrCreateSyncDir :: IO FilePath
+getOrCreateSyncDir = do
+    syncDir <- getUserSyncDir
+    F.createSyncDir syncDir
+    return syncDir
 
 debugLog :: String -> IO ()
 debugLog = putStrLn

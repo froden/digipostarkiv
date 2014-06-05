@@ -38,7 +38,6 @@ docsNotInList :: [FilePath] -> [Document] -> [Document]
 docsNotInList files = filter (\d -> lowerCaseFilename d `notElem` lowerFiles)
 	where lowerFiles = map (map toLower) files
 
-
 instance FromJSON Documents
 instance ToJSON Documents
 

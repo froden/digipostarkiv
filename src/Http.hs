@@ -7,7 +7,7 @@ import Network.HTTP.Types.Header
 import Network.HTTP.Types
 import Data.ByteString
 
-type Session = Either CookieJar AccessToken
+type Session = AccessToken
 
 digipostV2Type :: ByteString
 digipostV2Type = "application/vnd.digipost-v2+json"
@@ -34,8 +34,7 @@ addHeaders :: [Header] -> Request -> Request
 addHeaders hdrs req = req { requestHeaders = hdrs ++ requestHeaders req}
 
 setSession :: Session -> Request -> Request
-setSession (Right token) = addAccessToken token
-setSession (Left cookies) = setCookies cookies
+setSession = addAccessToken
 
 addAccessToken :: AccessToken -> Request -> Request
 addAccessToken token = addHeader $ accessTokenHeader token

@@ -47,4 +47,7 @@ hsLogout = O.removeAccessToken
 hsLoggedIn :: IO Bool
 hsLoggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.AccessToken))
 
+hsLocalChanges :: IO Bool
+hsLocalChanges = checkLocalChange
+
 
