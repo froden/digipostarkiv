@@ -21,8 +21,10 @@
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [statusItem setMenu:_statusMenu];
-    NSImage *statusImage = [NSImage imageNamed:@"digipostbw.png"];
+    statusImage = [NSImage imageNamed:@"digipostbw.png"];
     [statusImage setSize:NSMakeSize(20.0, 20.0)];
+    statusImageActive = [NSImage imageNamed:@"digipostbw-active.png"];
+    [statusImageActive setSize:NSMakeSize(20.0, 20.0)];
     NSImage *altStatusImage = [NSImage imageNamed:@"digipostbw-white.png"];
     [altStatusImage setSize:NSMakeSize(20.0, 20.0)];
     [statusItem setImage:statusImage];
@@ -142,7 +144,18 @@
         return;
     }
     syncInProgress = true;
-    int result = hsSync(runNumber ++);
+    BOOL checkRemote = runNumber++ % 6 == 0;
+    BOOL remoteSync = checkRemote && hsRemoteChanges();
+    BOOL localSync = !checkRemote && hsLocalChanges();
+    if (localSync || remoteSync) {
+        [self syncsync];
+    }
+    syncInProgress = false;
+}
+
+- (void)syncsync {
+    [statusItem setImage:statusImageActive];
+    int result = hsSync();
     if (result != 0) {
         if (result == 1) {
             [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
@@ -150,7 +163,7 @@
             NSLog(@"Unhandled syncresult: %i", result);
         }
     }
-    syncInProgress = false;
+    [statusItem setImage:statusImage];
 }
 
 @end

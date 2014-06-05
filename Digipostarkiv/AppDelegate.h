@@ -11,6 +11,8 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     NSStatusItem *statusItem;
+    NSImage *statusImage;
+    NSImage *statusImageActive;
     NSTimer *syncTimer;
     
     BOOL syncInProgress;
@@ -35,5 +37,6 @@
 
 - (void)stopSyncTimer;
 - (void)startSyncTimer;
+- (void)syncsync;
 
 @end

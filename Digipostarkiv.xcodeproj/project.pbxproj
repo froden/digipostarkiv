@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DE0139801940F9A70081B26E /* digipostbw-active.png in Resources */ = {isa = PBXBuildFile; fileRef = DE01397F1940F9A70081B26E /* digipostbw-active.png */; };
 		DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */; };
 		DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
 		DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF631906F23A008C83D2 /* InfoPlist.strings */; };
@@ -35,6 +36,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DE01397F1940F9A70081B26E /* digipostbw-active.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipostbw-active.png"; sourceTree = "<group>"; };
 		DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Digipostarkiv.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -131,6 +133,7 @@
 				DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */,
 				DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */,
 				DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */,
+				DE01397F1940F9A70081B26E /* digipostbw-active.png */,
 				DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */,
 				DEB1EF721906F23A008C83D2 /* Images.xcassets */,
 				DEB1EF611906F23A008C83D2 /* Supporting Files */,
@@ -249,6 +252,7 @@
 				DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */,
 				DEB1EF731906F23A008C83D2 /* Images.xcassets in Resources */,
 				DEB1EF6B1906F23A008C83D2 /* Credits.rtf in Resources */,
+				DE0139801940F9A70081B26E /* digipostbw-active.png in Resources */,
 				DEFFDED8191C1627009A77BF /* digipostbw.png in Resources */,
 				DEB1EF711906F23A008C83D2 /* MainMenu.xib in Resources */,
 			);

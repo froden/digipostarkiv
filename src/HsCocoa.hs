@@ -13,9 +13,11 @@ import Error
 
 foreign export ccall hsAuthUrl :: CString -> IO CString
 foreign export ccall hsAccessToken :: CString -> CString -> IO CInt
-foreign export ccall hsSync :: Int -> IO CInt
+foreign export ccall hsSync :: IO CInt
 foreign export ccall hsLogout :: IO ()
 foreign export ccall hsLoggedIn :: IO Bool
+foreign export ccall hsLocalChanges :: IO Bool
+foreign export ccall hsRemoteChanges :: IO Bool
 
 
 hsAuthUrl :: CString -> IO CString
@@ -33,9 +35,9 @@ hsAccessToken s c = do
 		Left NotAuthenticated -> return 1
 		Left _ -> return 99
 
-hsSync :: Int -> IO CInt
-hsSync runNumber = do
-	result <- try $ guiSync runNumber
+hsSync :: IO CInt
+hsSync = do
+	result <- try sync
 	case result of
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
@@ -49,5 +51,8 @@ hsLoggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.Ac
 
 hsLocalChanges :: IO Bool
 hsLocalChanges = checkLocalChange
+
+hsRemoteChanges :: IO Bool
+hsRemoteChanges = checkRemoteChange
 
 
