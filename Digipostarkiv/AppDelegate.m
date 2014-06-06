@@ -21,12 +21,12 @@
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     [statusItem setMenu:_statusMenu];
-    statusImage = [NSImage imageNamed:@"digipostbw.png"];
-    [statusImage setSize:NSMakeSize(20.0, 20.0)];
-    statusImageActive = [NSImage imageNamed:@"digipostbw-active.png"];
-    [statusImageActive setSize:NSMakeSize(20.0, 20.0)];
-    NSImage *altStatusImage = [NSImage imageNamed:@"digipostbw-white.png"];
-    [altStatusImage setSize:NSMakeSize(20.0, 20.0)];
+    statusImage = [NSImage imageNamed:@"digipost-black.png"];
+    [statusImage setSize:NSMakeSize(15.2, 20.0)];
+    statusImageActive = [NSImage imageNamed:@"digipost-red.png"];
+    [statusImageActive setSize:NSMakeSize(15.2, 20.0)];
+    NSImage *altStatusImage = [NSImage imageNamed:@"digipost-white.png"];
+    [altStatusImage setSize:NSMakeSize(15.2, 20.0)];
     [statusItem setImage:statusImage];
     [statusItem setAlternateImage:altStatusImage];
     [statusItem setHighlightMode:YES];

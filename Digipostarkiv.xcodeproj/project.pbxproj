@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DE0139801940F9A70081B26E /* digipostbw-active.png in Resources */ = {isa = PBXBuildFile; fileRef = DE01397F1940F9A70081B26E /* digipostbw-active.png */; };
+		DE0139841941C5A60081B26E /* digipost-black.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139811941C5A60081B26E /* digipost-black.png */; };
+		DE0139851941C5A60081B26E /* digipost-red.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139821941C5A60081B26E /* digipost-red.png */; };
+		DE0139861941C5A60081B26E /* digipost-white.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139831941C5A60081B26E /* digipost-white.png */; };
 		DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */; };
 		DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
 		DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF631906F23A008C83D2 /* InfoPlist.strings */; };
@@ -21,8 +23,6 @@
 		DEB1EF831906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF811906F23A008C83D2 /* InfoPlist.strings */; };
 		DEB1EF851906F23A008C83D2 /* DigipostarkivTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */; };
 		DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD31909082700F7C9FD /* liba.a */; };
-		DEFFDED8191C1627009A77BF /* digipostbw.png in Resources */ = {isa = PBXBuildFile; fileRef = DEFFDED7191C1627009A77BF /* digipostbw.png */; };
-		DEFFDEDC191CD03D009A77BF /* digipostbw-white.png in Resources */ = {isa = PBXBuildFile; fileRef = DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +36,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		DE01397F1940F9A70081B26E /* digipostbw-active.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipostbw-active.png"; sourceTree = "<group>"; };
+		DE0139811941C5A60081B26E /* digipost-black.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-black.png"; sourceTree = "<group>"; };
+		DE0139821941C5A60081B26E /* digipost-red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-red.png"; sourceTree = "<group>"; };
+		DE0139831941C5A60081B26E /* digipost-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-white.png"; sourceTree = "<group>"; };
 		DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Digipostarkiv.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -58,8 +60,6 @@
 		DEB1EF821906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		DEB1EF841906F23A008C83D2 /* DigipostarkivTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DigipostarkivTests.m; sourceTree = "<group>"; };
 		DEE5DCD31909082700F7C9FD /* liba.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liba.a; sourceTree = "<group>"; };
-		DEFFDED7191C1627009A77BF /* digipostbw.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digipostbw.png; sourceTree = "<group>"; };
-		DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipostbw-white.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,11 +129,11 @@
 		DEB1EF601906F23A008C83D2 /* Digipostarkiv */ = {
 			isa = PBXGroup;
 			children = (
-				DEFFDED7191C1627009A77BF /* digipostbw.png */,
 				DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */,
 				DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */,
-				DEFFDEDB191CD03D009A77BF /* digipostbw-white.png */,
-				DE01397F1940F9A70081B26E /* digipostbw-active.png */,
+				DE0139811941C5A60081B26E /* digipost-black.png */,
+				DE0139821941C5A60081B26E /* digipost-red.png */,
+				DE0139831941C5A60081B26E /* digipost-white.png */,
 				DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */,
 				DEB1EF721906F23A008C83D2 /* Images.xcassets */,
 				DEB1EF611906F23A008C83D2 /* Supporting Files */,
@@ -248,12 +248,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DEFFDEDC191CD03D009A77BF /* digipostbw-white.png in Resources */,
+				DE0139861941C5A60081B26E /* digipost-white.png in Resources */,
 				DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */,
+				DE0139841941C5A60081B26E /* digipost-black.png in Resources */,
+				DE0139851941C5A60081B26E /* digipost-red.png in Resources */,
 				DEB1EF731906F23A008C83D2 /* Images.xcassets in Resources */,
 				DEB1EF6B1906F23A008C83D2 /* Credits.rtf in Resources */,
-				DE0139801940F9A70081B26E /* digipostbw-active.png in Resources */,
-				DEFFDED8191C1627009A77BF /* digipostbw.png in Resources */,
 				DEB1EF711906F23A008C83D2 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
