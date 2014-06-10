@@ -21,14 +21,6 @@ import Http (AccessToken)
 import Error
 
 
-guiSync :: Int -> IO ()
-guiSync runNumber = do
-    syncDir <- getUserSyncDir
-    F.createSyncDir syncDir
-    hasLocalChanges <- checkLocalChange
-    let fullSync = runNumber `mod` 6 == 0
-    when (hasLocalChanges || fullSync) sync
-
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
     where
