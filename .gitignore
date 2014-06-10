@@ -3,6 +3,6 @@ dist
 o0/
 sync/
 *.sublime-*
-liba.a
+/liba.a
 
 xcuserdata/
