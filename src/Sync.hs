@@ -19,7 +19,10 @@ import qualified File as F
 import Oauth
 import Http (AccessToken)
 import Error
+import qualified Folder as F
+import qualified Mailbox as M
 
+type CSRFToken = String
 
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
@@ -67,8 +70,42 @@ sync' token = runResourceT $ do
     syncDir <- liftIO getOrCreateSyncDir
     manager <- liftIO $ newManager conduitManagerSettings
     (root, account) <- getAccount manager token
-    archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
-    documents <- getDocs manager token archiveLink
+    -- archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
+    -- documents <- getDocs manager token archiveLink
+    let mbox = head $ mailbox root
+    let csrf = csrfToken root
+    syncFolders manager csrf token mbox syncDir
+    let folders = F.folder $ M.folders mbox
+    void $ mapM (syncFilesInFolder manager csrf token syncDir) folders
+
+syncFolders :: Manager -> CSRFToken -> AccessToken -> M.Mailbox -> FilePath -> ResourceT IO ()
+syncFolders manager csrf token mbox syncDir = do
+    let folders = F.folder $ M.folders mbox
+    let syncFile = F.syncFile syncDir
+    localFolders <- liftIO $ F.existingFolders syncDir
+    liftIO $ debugLog (show localFolders)
+    lastState <- liftIO $ F.readSyncFile syncFile
+    let (newRemoteFolders, newLocalFolders, deletedRemoteFolders) = F.folderDiff lastState localFolders folders
+    liftIO $ void $ mapM debugLog [
+                            "newFoldersOnServer: [" ++ intercalate ", " (map F.name newRemoteFolders) ++ "]",
+                            "newFoldersOnDisk: [" ++ intercalate ", " newLocalFolders ++ "]",
+                            "deletedOnServer: [" ++ intercalate ", " deletedRemoteFolders ++ "]" ]
+    liftIO $ F.createFolders syncDir $ map F.name newRemoteFolders
+    createFolderLink <- liftIO $ linkOrException "create_folder" $ M.link mbox
+    void $ mapM (createFolder token manager createFolderLink csrf) newLocalFolders
+    liftIO $ F.deleteAllFolders syncDir deletedRemoteFolders
+    newState <- liftIO $ F.existingFolders syncDir
+    liftIO $ F.writeSyncFile syncFile newState
+
+
+syncFilesInFolder :: Manager -> CSRFToken -> AccessToken -> FilePath -> F.Folder -> ResourceT IO ()
+syncFilesInFolder manager csrf token parent folder = do
+    let syncDir = combine parent $ F.name folder
+    folderLink <- liftIO $ linkOrException "self" $ F.link folder
+    fullFolder <- getFolder token manager folderLink
+    let documents = filter D.uploaded $ D.document $ case F.documents fullFolder of
+                    Just docs -> docs
+                    Nothing -> D.Documents []
     let syncFile = F.syncFile syncDir
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
@@ -78,12 +115,11 @@ sync' token = runResourceT $ do
                             "upload: [" ++ intercalate ", " newFiles ++ "]",
                             "deleted: [" ++ intercalate ", " deletedFiles ++ "]" ]
     downloadAll token manager syncDir docsToDownload
-    uploadLink <- liftIO $ linkOrException "upload_document" $ A.link account
-    uploadAll token manager uploadLink (csrfToken root) (map (combine syncDir) newFiles)
+    uploadLink <- liftIO $ linkOrException "upload_document" $ F.link fullFolder
+    uploadAll token manager uploadLink csrf (map (combine syncDir) newFiles)
     liftIO $ F.deleteAll syncDir deletedFiles
     newState <- liftIO $ F.existingFiles syncDir
     liftIO $ F.writeSyncFile syncFile newState
-    liftIO $ debugLog "Finished"
 
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do

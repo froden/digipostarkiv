@@ -6,9 +6,15 @@ import System.FilePath.Posix
 import Control.Monad
 
 import Document
+import Folder
 
 existingFiles :: FilePath -> IO [FilePath]
 existingFiles = fmap filterSpecialFiles . getDirectoryContents
+
+existingFolders :: FilePath -> IO [FilePath]
+existingFolders path = existingFiles path >>= filterM doesRelativeDirExists
+	where
+		doesRelativeDirExists = doesDirectoryExist . combine path
 
 filterSpecialFiles :: [FilePath] -> [FilePath]
 filterSpecialFiles = removeDirs . removeHidden
@@ -36,8 +42,21 @@ syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, files
 		filesToDelete = filesNotInDocList lastState remoteDocs
 		filesToUpload = filesNotInDocList localFiles remoteDocs \\ filesToDelete
 
+folderDiff :: [FilePath] -> [FilePath] -> [Folder] -> ([Folder], [FilePath], [FilePath])
+folderDiff lastState localFolders remoteFolders = (newRemoteFolders, newLocalFolders, deletedRemoteFolders)
+	where
+		newRemoteFolders = foldersNotInList localFolders remoteFolders
+		deletedRemoteFolders = foldersNotInRemoteList lastState remoteFolders
+		newLocalFolders = foldersNotInRemoteList localFolders remoteFolders \\ deletedRemoteFolders
+
 deleteAll :: FilePath -> [FilePath] -> IO ()
 deleteAll syncDir = void . mapM (removeFile . combine syncDir)
 
+deleteAllFolders :: FilePath -> [FilePath] -> IO ()
+deleteAllFolders syncDir = void . mapM (removeDirectoryRecursive . combine syncDir)
+
 createSyncDir :: FilePath -> IO ()
 createSyncDir = createDirectoryIfMissing True
+
+createFolders :: FilePath -> [FilePath] -> IO ()
+createFolders syncDir = void . mapM (createDirectoryIfMissing True . combine syncDir)

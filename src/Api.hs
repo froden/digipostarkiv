@@ -24,6 +24,7 @@ import Link
 import Root
 import qualified Document as D
 import qualified Account as A
+import qualified Folder as F
 
 
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
@@ -86,6 +87,9 @@ getRoot manager session = getRequest session digipostBaseUrl >>= getJson manager
 getDocuments :: Session -> Manager -> Link -> ResourceT IO D.Documents
 getDocuments session manager docsLink = getRequest session (uri docsLink) >>= getJson manager
 
+getFolder :: Session -> Manager -> Link -> ResourceT IO F.Folder
+getFolder session manager folderLink = getRequest session (uri folderLink) >>= getJson manager
+
 getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
 getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
@@ -121,4 +125,16 @@ uploadFileMultipart session manager uploadLink token file = do
     --responseBody res $$+- sinkFile "temp.txt"
     return ()
 
+createFolder :: Session -> Manager -> Link -> String -> String -> ResourceT IO ()
+createFolder session manager createLink csrf folderName = do
+    let jsonBody = encode (F.Folder folderName "FOLDER" [] Nothing)
+    liftIO $ print jsonBody
+    let body = RequestBodyLBS jsonBody
+    req <- setBody body <$> 
+           addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$> 
+           setSession session <$>
+           setMethod "POST" <$> 
+           parseUrl (uri createLink)
+    _ <- http req manager
+    return ()
 
