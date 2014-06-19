@@ -8,6 +8,7 @@ import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import System.FilePath.Posix
 import Data.List
+import Data.Maybe
 import System.Directory
 import Control.Exception
 
@@ -43,7 +44,7 @@ checkLocalChange = do
     syncDir <- getOrCreateSyncDir
     isLocalFolderChange <- checkLocalChange' F.existingFolders syncDir
     localFolders <- F.existingFolders syncDir
-    fileChanges <- mapM (checkLocalChange' F.existingFiles) $ map (combine syncDir) localFolders
+    fileChanges <- mapM (checkLocalChange' F.existingFiles . combine syncDir) localFolders
     return $ or $ isLocalFolderChange : fileChanges
     
 
@@ -78,8 +79,6 @@ sync' token = runResourceT $ do
     syncDir <- liftIO getOrCreateSyncDir
     manager <- liftIO $ newManager conduitManagerSettings
     (root, account) <- getAccount manager token
-    -- archiveLink <- liftIO $ linkOrException "document_archive" $ A.link account
-    -- documents <- getDocs manager token archiveLink
     let mbox = head $ mailbox root
     let csrf = csrfToken root
     syncFolders manager csrf token mbox syncDir
@@ -111,9 +110,7 @@ syncFilesInFolder manager csrf token parent folder = do
     let syncDir = combine parent $ F.name folder
     folderLink <- liftIO $ linkOrException "self" $ F.link folder
     fullFolder <- getFolder token manager folderLink
-    let documents = filter D.uploaded $ D.document $ case F.documents fullFolder of
-                    Just docs -> docs
-                    Nothing -> D.Documents []
+    let documents = filter D.uploaded $ D.document $ fromMaybe (D.Documents []) (F.documents fullFolder)
     let syncFile = F.syncFile syncDir
     files <- liftIO $ F.existingFiles syncDir
     lastState <- liftIO $ F.readSyncFile syncFile
