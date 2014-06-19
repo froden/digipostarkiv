@@ -41,10 +41,18 @@ handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
 checkLocalChange :: IO Bool
 checkLocalChange = do
     syncDir <- getOrCreateSyncDir
+    isLocalFolderChange <- checkLocalChange' F.existingFolders syncDir
+    localFolders <- F.existingFolders syncDir
+    fileChanges <- mapM (checkLocalChange' F.existingFiles) $ map (combine syncDir) localFolders
+    return $ or $ isLocalFolderChange : fileChanges
+    
+
+checkLocalChange' :: (FilePath -> IO [FilePath]) -> FilePath -> IO Bool
+checkLocalChange' listFunc syncDir = do
     let syncFile = F.syncFile syncDir
     lastState <- F.readSyncFile syncFile
-    files <- F.existingFiles syncDir
-    return $ lastState /= files
+    files <- listFunc syncDir
+    return $ lastState /= files    
 
 checkRemoteChange :: IO Bool
 checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
