@@ -16,6 +16,7 @@ Simple work in progress file sync client for files uploaded to Digipost
 * OSX status bar application GUI
 * Oauth2 login for Digipost
 * Two way sync between local folder (Digipostarkiv) and Digipost archive
+* Suports Digipost folders
 * Will only sync documents marked as origin="uploaded"
 * Uses .sync and a three way diff to detect deleted files
 * Files can only be deleted from Digipost (to prevent accidentally deleting all files in archive)
@@ -23,5 +24,3 @@ Simple work in progress file sync client for files uploaded to Digipost
 
 ### TODO
 * Handle updated files
-* Sync status indication
-* Folders
