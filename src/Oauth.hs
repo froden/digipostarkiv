@@ -36,7 +36,7 @@ accessToken (State state) (AuthCode code) = do
 
 refreshAccessToken :: HTTP.AccessToken -> IO HTTP.AccessToken
 refreshAccessToken oldToken = do
-    putStrLn $ "trying to refresh token " ++ (show oldToken)
+    putStrLn $ "trying to refresh token " ++ show oldToken
     let oldRt = HTTP.refreshToken oldToken
     newToken <- fetchRefreshToken digigpostKey oldRt
     case newToken of

@@ -20,11 +20,7 @@ import System.FilePath.Posix
 import Control.Applicative
 
 import Http
-import Link
-import Root
-import qualified Document as D
-import qualified Account as A
-import qualified Folder as F
+import qualified ApiTypes as DP
 
 
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
@@ -45,9 +41,9 @@ instance ToJSON Auth
 digipostBaseUrl :: String
 digipostBaseUrl = "https://www.digipost.no/post/api"
 
-linkOrException :: String -> [Link] -> IO Link
+linkOrException :: String -> [DP.Link] -> IO DP.Link
 linkOrException relation links =
-    case linkWithRel relation links of
+    case DP.linkWithRel relation links of
         Just l -> return l
         Nothing -> throwIO $ NoLinkFoundException relation
 
@@ -56,16 +52,16 @@ decodeOrException json = case decode json of
     Nothing -> liftIO $ throwIO $ JsonParseException json
     Just decoded -> return decoded
 
-getAccount :: Manager -> Session -> ResourceT IO (Root, A.Account)
+getAccount :: Manager -> Session -> ResourceT IO (DP.Root, DP.Account)
 getAccount manager session = do
     root <- getRoot manager session
-    return (root, primaryAccount root)
+    return (root, DP.primaryAccount root)
 
-getDocs :: Manager -> Session -> Link -> ResourceT IO [D.Document]
+getDocs :: Manager -> Session -> DP.Link -> ResourceT IO [DP.Document]
 getDocs manager session docsLink = do
     allDocuments <- getDocuments session manager docsLink
     --we only want documents uploaded by the user
-    return $ filter D.uploaded (D.document allDocuments)
+    return $ filter DP.uploaded (DP.document allDocuments)
 
 authenticatePwd :: Manager -> Auth -> ResourceT IO CookieJar
 authenticatePwd manager auth = do 
@@ -81,42 +77,45 @@ authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> 
 getRequest :: (Failure HttpException m, Functor m) => Session -> String -> m Request
 getRequest session url = addHeader acceptDigipost <$> setSession session <$> parseUrl url
 
-getRoot :: Manager -> Session -> ResourceT IO Root
+getRoot :: Manager -> Session -> ResourceT IO DP.Root
 getRoot manager session = getRequest session digipostBaseUrl >>= getJson manager
 
-getDocuments :: Session -> Manager -> Link -> ResourceT IO D.Documents
-getDocuments session manager docsLink = getRequest session (uri docsLink) >>= getJson manager
+getDocuments :: Session -> Manager -> DP.Link -> ResourceT IO DP.Documents
+getDocuments session manager docsLink = getRequest session (DP.uri docsLink) >>= getJson manager
 
-getFolder :: Session -> Manager -> Link -> ResourceT IO F.Folder
-getFolder session manager folderLink = getRequest session (uri folderLink) >>= getJson manager
+getFolder :: Session -> Manager -> DP.Link -> ResourceT IO DP.Folder
+getFolder session manager folderLink = getRequest session (DP.uri folderLink) >>= getJson manager
+
+getMailbox :: Session -> Manager -> DP.Link -> ResourceT IO DP.Mailbox
+getMailbox session manager mboxLink = getRequest session (DP.uri mboxLink) >>= getJson manager
 
 getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
 getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
-downloadDocument :: Session -> Manager -> FilePath -> D.Document -> ResourceT IO ()
+downloadDocument :: Session -> Manager -> FilePath -> DP.Document -> ResourceT IO ()
 downloadDocument session manager syncDir document = do
     req <- downloadDocRequest session document
     res <- http req manager
     responseBody res $$+- sinkFile targetFile
-    where targetFile = combine syncDir $ D.filename document
+    where targetFile = combine syncDir $ DP.filename document
 
-downloadDocRequest :: Session -> D.Document -> ResourceT IO Request
+downloadDocRequest :: Session -> DP.Document -> ResourceT IO Request
 downloadDocRequest session document = contentLink >>= requestFromLink
     where contentLink = liftIO $ linkOrException "document_content" links 
-          requestFromLink = getRequest session . uri
-          links = D.link document
+          requestFromLink = getRequest session . DP.uri
+          links = DP.documentLinks document
 
-downloadAll :: Session -> Manager -> FilePath -> [D.Document] -> ResourceT IO ()
+downloadAll :: Session -> Manager -> FilePath -> [DP.Document] -> ResourceT IO ()
 downloadAll session manager syncDir = void . mapM download
     where download = downloadDocument session manager syncDir
 
-uploadAll :: Session -> Manager -> Link -> String -> [FilePath] -> ResourceT IO ()
+uploadAll :: Session -> Manager -> DP.Link -> String -> [FilePath] -> ResourceT IO ()
 uploadAll session manager uploadLink token = void . mapM upload
     where upload = uploadFileMultipart session manager uploadLink token
 
-uploadFileMultipart :: Session -> Manager -> Link -> String -> FilePath -> ResourceT IO ()
+uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO ()
 uploadFileMultipart session manager uploadLink token file = do
-    req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (uri uploadLink)
+    req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
     multipartReq <- formDataBody [partBS "subject" (UTF8.fromString $ takeBaseName file),
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
@@ -125,16 +124,15 @@ uploadFileMultipart session manager uploadLink token file = do
     --responseBody res $$+- sinkFile "temp.txt"
     return ()
 
-createFolder :: Session -> Manager -> Link -> String -> String -> ResourceT IO ()
+createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO ()
 createFolder session manager createLink csrf folderName = do
-    let jsonBody = encode (F.Folder folderName "FOLDER" [] Nothing)
-    liftIO $ print jsonBody
+    let jsonBody = encode (DP.Folder folderName "FOLDER" [] Nothing)
     let body = RequestBodyLBS jsonBody
     req <- setBody body <$> 
            addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$> 
            setSession session <$>
            setMethod "POST" <$> 
-           parseUrl (uri createLink)
+           parseUrl (DP.uri createLink)
     _ <- http req manager
     return ()
 
