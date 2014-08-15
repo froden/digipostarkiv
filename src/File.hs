@@ -15,7 +15,7 @@ toLowerCaseFilename = Filename . map toLower . name
 
 class File a where
     filename :: a -> Filename
-    
+
     lowerCaseFilename :: a -> Filename
     lowerCaseFilename = toLowerCaseFilename . filename
 
@@ -43,7 +43,7 @@ diff = foldl (flip deleteFileBy)
 
 syncDiff :: (File a, File b) => [a] -> [a] -> [b] -> ([b], [a], [a])
 syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, filesToDelete)
-    where 
+    where
         docsToDownload = diff remoteDocs localFiles
         filesToDelete = diff lastState remoteDocs
         filesToUpload = diff localFiles remoteDocs `diff` filesToDelete

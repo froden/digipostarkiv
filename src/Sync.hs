@@ -42,14 +42,14 @@ checkLocalChange = do
     localFolders <- F.existingFolders syncDir
     fileChanges <- mapM (checkLocalChange' F.existingFiles' . combine syncDir) localFolders
     return $ or $ isLocalFolderChange : fileChanges
-    
+
 
 checkLocalChange' :: (FilePath -> IO [F.Filename]) -> FilePath -> IO Bool
 checkLocalChange' listFunc syncDir = do
     let syncFile = F.syncFile syncDir
     lastState <- F.readSyncFile' syncFile
     files <- listFunc syncDir
-    return $ lastState /= files    
+    return $ lastState /= files
 
 checkRemoteChange :: IO Bool
 checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
@@ -91,7 +91,7 @@ sync' token = runResourceT $ do
     let csrf = DP.csrfToken root
     syncFolders manager csrf token mbox syncDir
     mailboxLink <- liftIO $ linkOrException "self" $ DP.mailboxLinks mbox
-    liftIO $ debugLog $ "getting mailbox: " ++ (show mailboxLink)
+    liftIO $ debugLog $ "getting mailbox: " ++ show mailboxLink
     --bug i digipost: får 404 når man henter mailbox med self-link
     --mbox' <- getMailbox token manager mailboxLink
     (root', _) <- getAccount manager token

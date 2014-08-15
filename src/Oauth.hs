@@ -50,10 +50,10 @@ storeAccessToken at = do
 
 loadAccessToken :: IO HTTP.AccessToken
 loadAccessToken = catch readFileIfExists whenNotFound
-    where 
-        readFileIfExists = do 
+    where
+        readFileIfExists = do
             userHome <- getHomeDirectory
-            content <- readFile (accessTokenFile userHome) 
+            content <- readFile (accessTokenFile userHome)
             case readMaybe content of
               Just at -> return at
               Nothing -> throwIO NotAuthenticated

@@ -54,5 +54,3 @@ hsLocalChanges = checkLocalChange
 
 hsRemoteChanges :: IO Bool
 hsRemoteChanges = checkRemoteChange
-
-

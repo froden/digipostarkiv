@@ -64,7 +64,7 @@ getDocs manager session docsLink = do
     return $ filter DP.uploaded (DP.document allDocuments)
 
 authenticatePwd :: Manager -> Auth -> ResourceT IO CookieJar
-authenticatePwd manager auth = do 
+authenticatePwd manager auth = do
     authReq <- authRequest (digipostBaseUrl ++ "/private/passwordauth") auth
     authRes <- httpLbs authReq manager
     return $ responseCookieJar authRes
@@ -89,7 +89,7 @@ getFolder session manager folderLink = getRequest session (DP.uri folderLink) >>
 getMailbox :: Session -> Manager -> DP.Link -> ResourceT IO DP.Mailbox
 getMailbox session manager mboxLink = getRequest session (DP.uri mboxLink) >>= getJson manager
 
-getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a 
+getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a
 getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
 downloadDocument :: Session -> Manager -> FilePath -> DP.Document -> ResourceT IO ()
@@ -101,7 +101,7 @@ downloadDocument session manager syncDir document = do
 
 downloadDocRequest :: Session -> DP.Document -> ResourceT IO Request
 downloadDocRequest session document = contentLink >>= requestFromLink
-    where contentLink = liftIO $ linkOrException "document_content" links 
+    where contentLink = liftIO $ linkOrException "document_content" links
           requestFromLink = getRequest session . DP.uri
           links = DP.documentLinks document
 
@@ -128,11 +128,10 @@ createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT I
 createFolder session manager createLink csrf folderName = do
     let jsonBody = encode (DP.Folder folderName "FOLDER" [] Nothing)
     let body = RequestBodyLBS jsonBody
-    req <- setBody body <$> 
-           addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$> 
+    req <- setBody body <$>
+           addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$>
            setSession session <$>
-           setMethod "POST" <$> 
+           setMethod "POST" <$>
            parseUrl (DP.uri createLink)
     _ <- http req manager
     return ()
-
