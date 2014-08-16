@@ -4,5 +4,6 @@ o0/
 sync/
 *.sublime-*
 /liba.a
-
+.cabal-sandbox/
+cabal.sandbox.config
 xcuserdata/

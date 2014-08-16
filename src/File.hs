@@ -4,6 +4,7 @@ import System.Directory
 import Data.List
 import System.FilePath.Posix
 import Control.Monad
+import Control.Applicative
 import Data.Char
 
 import qualified ApiTypes as DP
@@ -52,7 +53,7 @@ readSyncFile' :: FilePath -> IO [Filename]
 readSyncFile' syncfile = doesFileExist syncfile >>= readIfExists
     where
         readIfExists False = return []
-        readIfExists True = fmap (map Filename . lines) $ readFile syncfile
+        readIfExists True = map Filename . lines <$> readFile syncfile
 
 existingFiles' :: FilePath -> IO [Filename]
 existingFiles' = fmap (map Filename) . existingFiles
