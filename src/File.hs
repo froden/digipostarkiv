@@ -4,12 +4,35 @@ import System.Directory
 import Data.List
 import System.FilePath.Posix
 import Control.Monad
-import Control.Applicative
+import Control.Exception
 import Data.Char
+import Text.Read
+import Data.Maybe
 
 import qualified ApiTypes as DP
 
-newtype Filename = Filename { name :: String } deriving (Eq, Show)
+data Directory = Directory Filename [Filename] deriving (Read, Show)
+
+dirname :: Directory -> Filename
+dirname (Directory n _) = n
+
+dirnames :: [Directory] -> [Filename]
+dirnames = map dirname
+
+dirContents :: Directory -> [Filename]
+dirContents (Directory _ c) = c
+
+readSyncDirContents :: FilePath -> IO [Directory]
+readSyncDirContents path = do
+    r <- try (readFile path) :: IO (Either IOException String)
+    case r of
+        Right content -> return $ fromMaybe [] (readMaybe content)
+        Left _ -> return []
+
+writeSyncDirContents :: FilePath -> [Directory] -> IO ()
+writeSyncDirContents path dirs = writeFile path (show dirs)
+
+newtype Filename = Filename { name :: String } deriving (Eq, Read, Show)
 
 toLowerCaseFilename :: Filename -> Filename
 toLowerCaseFilename = Filename . map toLower . name
@@ -49,11 +72,14 @@ syncDiff lastState localFiles remoteDocs = (docsToDownload, filesToUpload, files
         filesToDelete = diff lastState remoteDocs
         filesToUpload = diff localFiles remoteDocs `diff` filesToDelete
 
-readSyncFile' :: FilePath -> IO [Filename]
-readSyncFile' syncfile = doesFileExist syncfile >>= readIfExists
+readSyncFile :: FilePath -> IO [Directory]
+readSyncFile syncfile = catch readFileIfExists whenNotFound
     where
-        readIfExists False = return []
-        readIfExists True = map Filename . lines <$> readFile syncfile
+        readFileIfExists = do
+            content <- readFile syncfile
+            return $ fromMaybe [] (readMaybe content)
+        whenNotFound :: IOException -> IO [Directory]
+        whenNotFound _ = return []
 
 existingFiles' :: FilePath -> IO [Filename]
 existingFiles' = fmap (map Filename) . existingFiles

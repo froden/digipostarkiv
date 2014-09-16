@@ -19,6 +19,7 @@ import Oauth
 import Http (AccessToken)
 import Error
 
+
 type CSRFToken = String
 
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
@@ -38,16 +39,16 @@ handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
 checkLocalChange :: IO Bool
 checkLocalChange = do
     syncDir <- getOrCreateSyncDir
-    isLocalFolderChange <- checkLocalChange' F.existingFolders' syncDir
+    let syncFile = F.syncFile syncDir
+    lastState <- F.readSyncFile syncFile
+    isLocalFolderChange <- checkLocalChange' F.existingFolders' (F.dirnames lastState) syncDir
     localFolders <- F.existingFolders syncDir
-    fileChanges <- mapM (checkLocalChange' F.existingFiles' . combine syncDir) localFolders
+    fileChanges <- mapM (\f -> (checkLocalChange' F.existingFiles' (F.dirContents (find (\(Directory)+) lastState)) . combine syncDir) f) localFolders
     return $ or $ isLocalFolderChange : fileChanges
 
 
-checkLocalChange' :: (FilePath -> IO [F.Filename]) -> FilePath -> IO Bool
-checkLocalChange' listFunc syncDir = do
-    let syncFile = F.syncFile syncDir
-    lastState <- F.readSyncFile' syncFile
+checkLocalChange' :: (FilePath -> IO [F.Filename]) -> [F.Filename] -> FilePath -> IO Bool
+checkLocalChange' listFunc lastState syncDir = do
     files <- listFunc syncDir
     return $ lastState /= files
 
@@ -75,7 +76,7 @@ checkRemoteChange'' :: (F.File a) => ResourceT IO [a] -> FilePath -> ResourceT I
 checkRemoteChange'' listFunc syncDir = do
     remoteFiles <- listFunc
     let syncFile = F.syncFile syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
+    lastState <- liftIO $ F.readSyncFile syncFile
     return $ not $ null (remoteFiles `F.diff` lastState) && null (lastState `F.diff` remoteFiles)
 
 sync :: IO ()
@@ -105,7 +106,7 @@ syncFolders manager csrf token mbox syncDir = do
     let folders = DP.folder $ DP.folders mbox
     let syncFile = F.syncFile syncDir
     localFolders <- liftIO $ F.existingFolders' syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
+    lastState <- liftIO $ F.readSyncFile syncFile
     let (newRemoteFolders, newLocalFolders, deletedRemoteFolders) = F.syncDiff lastState localFolders folders
     liftIO $ logDiff newRemoteFolders newLocalFolders deletedRemoteFolders
     liftIO $ F.createFolders syncDir $ map DP.folderName newRemoteFolders
@@ -125,7 +126,7 @@ syncFilesInFolder manager csrf token parent folder = do
     let documents = filter DP.uploaded $ DP.document $ fromMaybe (DP.Documents []) (DP.documents fullFolder)
     let syncFile = F.syncFile syncDir
     files <- liftIO $ F.existingFiles' syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
+    lastState <- liftIO $ F.readSyncFile syncFile
     let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
     liftIO $ logDiff docsToDownload newFiles deletedFiles
     downloadAll token manager syncDir docsToDownload
