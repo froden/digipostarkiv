@@ -9,13 +9,13 @@ import GHC.Generics (Generic)
 import Data.List
 import Data.Char
 
-data Link = Link { rel :: String, uri :: String } deriving (Show, Generic)
+data Link = Link { rel :: String, uri :: String } deriving (Show, Read, Generic)
 data Root = Root { csrfToken :: String, primaryAccount :: Account, mailbox :: [Mailbox], rootLinks :: [Link] } deriving (Show)
 data Account = Account { fullName :: String, accountLinks :: [Link] } deriving (Show)
-data Documents = Documents { document :: [Document] } deriving (Show)
-data Document = Document { subject :: String, origin :: String, fileType :: String, documentLinks :: [Link] } deriving (Show)
+data Documents = Documents { document :: [Document] } deriving (Show, Read)
+data Document = Document { subject :: String, origin :: String, fileType :: String, documentLinks :: [Link] } deriving (Show, Read)
 data Folders = Folders { folder :: [Folder] } deriving (Show)
-data Folder = Folder { folderName :: String, icon :: String, folderLinks :: [Link], documents :: Maybe Documents } deriving (Show)
+data Folder = Folder { folderName :: String, icon :: String, folderLinks :: [Link], documents :: Maybe Documents } deriving (Show, Read)
 data Mailbox = Mailbox { folders :: Folders, mailboxLinks :: [Link] } deriving (Show)
 
 linkWithRel :: String -> [Link] -> Maybe Link

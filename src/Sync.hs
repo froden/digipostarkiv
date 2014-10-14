@@ -6,11 +6,13 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
+import Control.Monad.Reader
 import System.FilePath.Posix
 import Data.List
 import Data.Maybe
 import System.Directory
 import Control.Exception
+import Text.Read (readMaybe)
 
 import Api
 import qualified ApiTypes as DP
@@ -20,6 +22,114 @@ import Http (AccessToken)
 import Error
 
 type CSRFToken = String
+type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
+
+data File' = File' FilePath (Maybe DP.Document)
+data Dir' = Dir' FilePath [File'] (Maybe DP.Folder)
+
+type Name = String
+data FileTree =
+    File Name (Maybe DP.Document) |
+    Dir Name [FileTree] (Maybe DP.Folder) deriving (Show, Read)
+
+data FTCtx = FTCtx Name [FileTree] [FileTree] (Maybe DP.Folder) deriving (Show)
+
+type FTZipper = (FileTree, [FTCtx])
+
+ftZipper :: FileTree -> FTZipper
+ftZipper ft = (ft, [])
+
+ftUp :: FTZipper -> Maybe FTZipper
+ftUp (item, FTCtx name ls rs f:bs) = Just (Dir name (ls ++ [item] ++ rs) f, bs)
+ftUp (_, []) = Nothing
+
+ftRight :: FTZipper -> Maybe FTZipper
+ftRight (item, FTCtx name ls (r:rs) f:bs) = Just (r, FTCtx name (ls ++ [item]) rs f:bs)
+ftRight (_, FTCtx _ _ [] _:_) = Nothing
+ftRight (_, []) = error "cannot go rigth from root node"
+
+ftDown :: FTZipper -> Maybe FTZipper
+ftDown (Dir name (c:cs) f, bs) = Just (c, FTCtx name [] cs f:bs)
+ftDown (Dir _ [] _, _) = Nothing
+ftDown (File _ _, _) = error "cannot go down into file"
+
+getLastState :: FilePath -> IO FileTree
+getLastState syncFile = do
+    r <- try (readFile syncFile) :: IO (Either IOException String)
+    case r of
+        Right content -> return $ fromMaybe emptyDir (readMaybe content)
+        Left _ -> return emptyDir
+    where emptyDir = Dir "Digipostarkiv" [] Nothing
+
+getLocalState :: FilePath -> IO FileTree
+getLocalState dirPath = do
+    names <- getDirectoryContents dirPath
+    let properNames = filter (`notElem` [".", ".."]) names
+    content <- forM properNames $ \name -> do
+        let subPath = dirPath </> name
+        isDirectory <- doesDirectoryExist subPath
+        if isDirectory
+            then getLocalState subPath
+            else return (File name Nothing)
+    return $ Dir dirPath content Nothing
+
+--getRemoteState :: FilePath -> ApiAction FileTree
+
+--addedOnServer :: FileTree -> FileTree -> FileTree -> FileTree
+
+--addedLocal :: FileTree -> FileTree -> FileTree -> FileTree
+
+--deletedOnServer :: FileTree -> FileTree -> FileTree -> FileTree
+
+--deletedLocal :: FileTree -> FileTree -> FileTree -> FileTree
+
+ftName :: FileTree -> String
+ftName (File name _) = name
+ftName (Dir name _ _) = name
+
+fullPath :: FTZipper -> FilePath
+fullPath z@(item, _) = case ftUp z of
+  Nothing -> name
+  Just parentZipper -> fullPath parentZipper `combine` name
+  where name = ftName item
+
+download :: FTZipper -> ApiAction ()
+download z@(File _ (Just remoteDoc), _) = Sync.downloadDocument (fullPath z) remoteDoc
+download (File _ Nothing, _) = error "Either file at root node of no remote document"
+download z@(Dir{}, _) = do
+  liftIO $ createDirectoryIfMissing True (fullPath z)
+  maybe (return ()) download (ftDown z)
+  maybe (return ()) download (ftRight z)
+
+upload :: FTZipper -> ApiAction ()
+upload (File name _, FTCtx _ _ _ (Just parentFolder):_) = uploadDocument parentFolder name
+upload (File _ _, _) = error "Either file at root node or no parent remote folder"
+upload z@(Dir name _ _, _) = do
+  createRemoteFolder name
+  maybe (return ()) upload (ftDown z)
+  maybe (return ()) upload (ftRight z)
+
+downloadDocument :: FilePath -> DP.Document -> ApiAction ()
+downloadDocument localPath remoteDoc = do
+  (manager, aToken, _, _) <- ask
+  liftResourceT $ Api.downloadDocument aToken manager localPath remoteDoc
+
+createRemoteFolder :: Name -> ApiAction ()
+createRemoteFolder folderName = do
+  (manager, aToken, csrfToken, mbox) <- ask
+  createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
+  liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
+
+uploadDocument :: DP.Folder -> FilePath -> ApiAction ()
+uploadDocument folder localPath = do
+    (manager, aToken, csrfToken, _) <- ask
+    uploadLink <- liftIO $ linkOrException "upload_document" $ DP.folderLinks folder
+    liftResourceT $ uploadFileMultipart aToken manager uploadLink csrfToken localPath
+
+--delete :: FileTree -> IO ()
+--delete (File localPath _) = deleteFile localPath
+--delete (Dir localPath _ _) = deleteDir localPath
+
 
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
@@ -147,9 +257,9 @@ getOrCreateSyncDir = do
     return syncDir
 
 logDiff :: (F.File a, F.File b) => [a] -> [b] -> [b] -> IO ()
-logDiff download upload deleted = void $ mapM debugLog [
-                            "download: [" ++ intercalate ", " (map F.filenameStr download) ++ "]",
-                            "upload: [" ++ intercalate ", " (map F.filenameStr upload) ++ "]",
+logDiff toDownload toUpload deleted = void $ mapM debugLog [
+                            "download: [" ++ intercalate ", " (map F.filenameStr toDownload) ++ "]",
+                            "upload: [" ++ intercalate ", " (map F.filenameStr toUpload) ++ "]",
                             "deleted: [" ++ intercalate ", " (map F.filenameStr deleted) ++ "]" ]
 
 debugLog :: String -> IO ()
