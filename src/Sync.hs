@@ -100,28 +100,24 @@ instance Eq FileTree where
   _ == _ = False
 
 treeDiff :: FileTree -> FileTree -> Maybe FileTree
-treeDiff ft1@(File name1 _) (File name2 _) =
-    if name1 == name2 then Nothing else Just ft1
 treeDiff ft1@(Dir name1 contents1 folder1) ft2@(Dir name2 contents2 _)
     | ft1 == ft2 = Nothing
-    | name1 == name2 = let contentDiff = contents1 `diff` contents2
-                       in if null contentDiff
-                         then Nothing
-                         else Just $ Dir name1 contentDiff folder1
+    | name1 == name2 =
+        let contentDiff = contents1 `diff` contents2
+        in if null contentDiff
+           then Nothing
+           else Just $ Dir name1 contentDiff folder1
+treeDiff ft1 ft2
+    | ft1 == ft2 = Nothing
     | otherwise = Just ft1
-      where
-        diff = foldl (flip deleteFrom)
-        deleteFrom _ [] = []
-        deleteFrom x@(Dir n1 c1 _) (y@(Dir n2 c2 f2):ys)
-          | x == y = ys
-          | n1 == n2 =
-            let contentDiff = c2 `diff` c1
-            in if null contentDiff
-              then ys else Dir n2 contentDiff f2 : ys
-        deleteFrom x (y:ys)
-          | x == y = ys
-          | otherwise = y : deleteFrom x ys
-treeDiff ft1 _ = Just ft1
+
+diff :: [FileTree] -> [FileTree] -> [FileTree]
+diff = foldl (flip deleteFrom)
+  where
+    deleteFrom _ [] = []
+    deleteFrom x (y:ys) = case treeDiff y x of
+      Nothing -> ys
+      Just ft -> ft : deleteFrom x ys
 
 
 orElse :: Maybe a -> Maybe a -> Maybe a
