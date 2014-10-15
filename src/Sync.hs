@@ -53,25 +53,28 @@ ftDown (Dir name (c:cs) f, bs) = Just (c, FTCtx name [] cs f:bs)
 ftDown (Dir _ [] _, _) = Nothing
 ftDown (File _ _, _) = error "cannot go down into file"
 
-getLastState :: FilePath -> IO FileTree
-getLastState syncFile = do
+readSyncState :: FilePath -> IO FileTree
+readSyncState syncFile = do
     r <- try (readFile syncFile) :: IO (Either IOException String)
     case r of
         Right content -> return $ fromMaybe emptyDir (readMaybe content)
         Left _ -> return emptyDir
     where emptyDir = Dir "Digipostarkiv" [] Nothing
 
+writeSyncState :: FilePath -> FileTree -> IO ()
+writeSyncState syncFile state = writeFile syncFile (show state)
+
 getLocalState :: FilePath -> IO FileTree
 getLocalState dirPath = do
     names <- getDirectoryContents dirPath
-    let properNames = filter (`notElem` [".", ".."]) names
+    let properNames = filter (isPrefixOf ".") $ filter (`notElem` [".", ".."]) names
     content <- forM properNames $ \name -> do
         let subPath = dirPath </> name
         isDirectory <- doesDirectoryExist subPath
         if isDirectory
             then getLocalState subPath
             else return (File name Nothing)
-    return $ Dir dirPath content Nothing
+    return $ Dir (takeFileName dirPath) content Nothing
 
 --getRemoteState :: FilePath -> ApiAction FileTree
 
