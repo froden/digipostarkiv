@@ -40,7 +40,7 @@ library
                        text ==1.1.*
   -- main-is:             Main.hs
   hs-source-dirs:      src
-  exposed-modules:     HsCocoa, Sync
+  exposed-modules:     HsCocoa, Api, ApiTypes, Error, File, Http, Oauth, Sync
   ghc-options:         -Wall -threaded -staticlib
   default-language:    Haskell2010
 

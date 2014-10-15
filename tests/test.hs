@@ -1,6 +1,8 @@
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Applicative
+
 import Sync
 
 main :: IO ()
@@ -17,11 +19,15 @@ unitTests = testGroup "Unit tests"
         Nothing -> return ()
         Just _ -> assertFailure "Expected nothing"
 
-  -- the following test does not hold
   , testCase "Zipper can go down and up again" $
       case Just zipper >>= ftDown >>= ftUp of
           Nothing -> assertFailure "Expected zipper"
           Just _ -> return ()
+
+  , testCase "Compute full path" $
+      case fullPath <$> ftDown zipper of
+          Nothing -> assertFailure "Expected full path"
+          Just p -> assertEqual "" "Digipostarkiv/fileA" p
   ]
 
 tree :: FileTree
