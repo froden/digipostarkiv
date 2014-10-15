@@ -76,10 +76,59 @@ getLocalState dirPath = do
             else return (File name Nothing)
     return $ Dir (takeFileName dirPath) content Nothing
 
---getRemoteState :: FilePath -> ApiAction FileTree
+getRemoteState :: ApiAction FileTree
+getRemoteState = do
+    (_, _, _, mbox) <- ask
+    let folders = (DP.folder . DP.folders) mbox
+    contents <- mapM downloadFolder folders
+    return $ Dir "Digipostarkiv" contents Nothing
+  where
+    downloadFolder :: DP.Folder -> ApiAction FileTree
+    downloadFolder folder = do
+      (manager, aToken, _, _) <- ask
+      folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
+      fullFolder <- liftResourceT $ getFolder aToken manager folderLink
+      let documents = filter DP.uploaded (DP.documentInFolder fullFolder)
+      let files = map docToFile documents
+      return $ Dir (DP.folderName folder) files (Just folder)
+      where
+        docToFile doc = File (DP.filename doc) (Just doc)
 
---addedOnServer :: FileTree -> FileTree -> FileTree -> FileTree
+instance Eq FileTree where
+  (Dir name1 contents1 _) == (Dir name2 contents2 _) = name1 == name2 && contents1 == contents2
+  (File name1 _) == (File name2 _) = name1 == name2
+  _ == _ = False
 
+treeDiff :: FileTree -> FileTree -> Maybe FileTree
+treeDiff ft1@(File name1 _) (File name2 _) =
+    if name1 == name2 then Nothing else Just ft1
+treeDiff ft1@(Dir name1 contents1 folder1) ft2@(Dir name2 contents2 _)
+    | ft1 == ft2 = Nothing
+    | name1 == name2 = let contentDiff = contents1 `diff` contents2
+                       in if null contentDiff
+                         then Nothing
+                         else Just $ Dir name1 contentDiff folder1
+    | otherwise = Just ft1
+      where
+        diff = foldl (flip deleteFrom)
+        deleteFrom _ [] = []
+        deleteFrom x@(Dir n1 c1 _) (y@(Dir n2 c2 f2):ys)
+          | x == y = ys
+          | n1 == n2 =
+            let contentDiff = c2 `diff` c1
+            in if null contentDiff
+              then ys else Dir n2 contentDiff f2 : ys
+        deleteFrom x (y:ys)
+          | x == y = ys
+          | otherwise = y : deleteFrom x ys
+treeDiff ft1 _ = Just ft1
+
+
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+    Just _  -> x
+    Nothing -> y
+--newOnServer
 --addedLocal :: FileTree -> FileTree -> FileTree -> FileTree
 
 --deletedOnServer :: FileTree -> FileTree -> FileTree -> FileTree
