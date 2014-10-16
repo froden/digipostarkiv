@@ -6,7 +6,7 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
-import Control.Monad.Reader (ReaderT, ask)
+import Control.Monad.Reader (ReaderT, ask, runReaderT)
 import System.FilePath.Posix
 import Data.List
 import Data.Maybe
@@ -67,7 +67,7 @@ writeSyncState syncFile state = writeFile syncFile (show state)
 getLocalState :: FilePath -> IO FileTree
 getLocalState dirPath = do
     names <- getDirectoryContents dirPath
-    let properNames = filter (isPrefixOf ".") $ filter (`notElem` [".", ".."]) names
+    let properNames = filter (not . isPrefixOf ".") $ filter (`notElem` [".", ".."]) names
     content <- forM properNames $ \name -> do
         let subPath = dirPath </> name
         isDirectory <- doesDirectoryExist subPath
@@ -200,26 +200,39 @@ handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
         handleException e = throwIO $ HttpFailed e
 
 
+initLocalState :: IO (FilePath, FilePath, FileTree, FileTree)
+initLocalState = do
+    syncDir <- getOrCreateSyncDir
+    let syncFile = F.syncFile syncDir
+    previousState <- readSyncState syncFile
+    localState <- getLocalState syncDir
+    return (syncDir, syncFile, previousState, localState)
+
 checkLocalChange :: IO Bool
 checkLocalChange = do
-    syncDir <- getOrCreateSyncDir
-    isLocalFolderChange <- checkLocalChange' F.existingFolders' syncDir
-    localFolders <- F.existingFolders syncDir
-    fileChanges <- mapM (checkLocalChange' F.existingFiles' . combine syncDir) localFolders
-    return $ or $ isLocalFolderChange : fileChanges
-
-
-checkLocalChange' :: (FilePath -> IO [F.Filename]) -> FilePath -> IO Bool
-checkLocalChange' listFunc syncDir = do
-    let syncFile = F.syncFile syncDir
-    lastState <- F.readSyncFile' syncFile
-    files <- listFunc syncDir
-    return $ lastState /= files
+    (_, _, previousState, localState) <- initLocalState
+    let added = localState `treeDiff` previousState
+    let deleted = previousState `treeDiff` localState
+    return $ isJust added || isJust deleted
 
 checkRemoteChange :: IO Bool
 checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
 
---TODO: Fixme folder support
+newCheckRemoteChange :: IO Bool
+newCheckRemoteChange = loadAccessToken >>= handleTokenRefresh newCheckRemoteChange'
+
+newCheckRemoteChange' :: AccessToken -> IO Bool
+newCheckRemoteChange' token = do
+    (_, _, previousState, _) <- initLocalState
+    runResourceT $ do
+      manager <- liftIO $ newManager conduitManagerSettings
+      (root, _) <- getAccount manager token
+      let mbox = head $ DP.mailbox root
+      remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
+      let added = remoteState `treeDiff` previousState
+      let deleted = previousState `treeDiff` remoteState
+      return $ isJust added || isJust deleted
+
 checkRemoteChange' :: AccessToken -> IO Bool
 checkRemoteChange' token = runResourceT $ do
     syncDir <- liftIO getOrCreateSyncDir
