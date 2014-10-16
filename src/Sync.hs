@@ -6,7 +6,7 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
-import Control.Monad.Reader
+import Control.Monad.Reader (ReaderT, ask)
 import System.FilePath.Posix
 import Data.List
 import Data.Maybe
@@ -120,14 +120,21 @@ diff = foldl (flip deleteFrom)
       Just ft -> ft : deleteFrom x ys
 
 
-orElse :: Maybe a -> Maybe a -> Maybe a
-x `orElse` y = case x of
-    Just _  -> x
-    Nothing -> y
---newOnServer
---addedLocal :: FileTree -> FileTree -> FileTree -> FileTree
+--for now does not consider locally deleted files to ensure
+--we dont acidentally delete all files on server
+--files deleted locally will be restored from server
+newOnServer :: FileTree -> FileTree -> FileTree -> Maybe FileTree
+newOnServer local _ remote = remote `treeDiff` local
 
---deletedOnServer :: FileTree -> FileTree -> FileTree -> FileTree
+deletedOnServer :: FileTree -> FileTree -> Maybe FileTree
+deletedOnServer previous remote = previous `treeDiff` remote
+
+newLocal :: FileTree -> FileTree -> FileTree -> Maybe FileTree
+newLocal local previous remote = do
+    new <- local `treeDiff` remote
+    deleted <- deletedOnServer previous remote
+    new `treeDiff` deleted
+
 
 --deletedLocal :: FileTree -> FileTree -> FileTree -> FileTree
 

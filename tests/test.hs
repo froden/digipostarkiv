@@ -62,7 +62,43 @@ unitTests = testGroup "Unit tests"
       in case treeDiff tree1 tree2 of
           Nothing -> assertFailure "Expected diff"
           Just f -> assertEqual "" (Dir "Digipostarkiv" [File "fileA" Nothing] Nothing) f
+
+  , testCase "Diff complex trees" $
+      let
+        tree1 = Dir "Digipostarkiv" [File "fileA" Nothing, Dir "dirA" [File "fileB" Nothing, File "fileC" Nothing] Nothing, Dir "dirB" [File "fileD" Nothing] Nothing] Nothing
+        tree2 = Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing, File "fileD" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+      in case treeDiff tree1 tree2 of
+          Nothing -> assertFailure "Expected diff"
+          Just f -> assertEqual "" (Dir "Digipostarkiv" [File "fileA" Nothing, Dir "dirA" [File "fileC" Nothing] Nothing, Dir "dirB" [File "fileD" Nothing] Nothing] Nothing) f
+
+  , testCase "compute newOnServer" $
+      let
+        local = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+      in case newOnServer local emptyTree remote of
+          Nothing -> assertFailure "Expected diff"
+          Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing) f
+
+  , testCase "compute deletedOnServer" $
+      let
+        previous = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+      in case deletedOnServer previous remote of
+          Nothing -> assertFailure "Expected diff"
+          Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing) f
+
+  , testCase "compute newLocal" $
+      let
+        local = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+        previous = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+      in case newLocal local previous remote of
+          Nothing -> assertFailure "Expected diff"
+          Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing] Nothing) f
   ]
+
+emptyTree :: FileTree
+emptyTree = Dir "Digipostarkiv" [] Nothing
 
 tree :: FileTree
 tree = Dir "Digipostarkiv" [File "fileA" Nothing] Nothing
