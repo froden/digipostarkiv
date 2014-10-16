@@ -218,11 +218,8 @@ checkLocalChange = do
 checkRemoteChange :: IO Bool
 checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
 
-newCheckRemoteChange :: IO Bool
-newCheckRemoteChange = loadAccessToken >>= handleTokenRefresh newCheckRemoteChange'
-
-newCheckRemoteChange' :: AccessToken -> IO Bool
-newCheckRemoteChange' token = do
+checkRemoteChange' :: AccessToken -> IO Bool
+checkRemoteChange' token = do
     (_, _, previousState, _) <- initLocalState
     runResourceT $ do
       manager <- liftIO $ newManager conduitManagerSettings
@@ -232,29 +229,6 @@ newCheckRemoteChange' token = do
       let added = remoteState `treeDiff` previousState
       let deleted = previousState `treeDiff` remoteState
       return $ isJust added || isJust deleted
-
-checkRemoteChange' :: AccessToken -> IO Bool
-checkRemoteChange' token = runResourceT $ do
-    syncDir <- liftIO getOrCreateSyncDir
-    manager <- liftIO $ newManager conduitManagerSettings
-    (root, _) <- getAccount manager token
-    let mbox = head $ DP.mailbox root
-    let folders = (DP.folder . DP.folders) mbox
-    isRemoteFolderChange <- checkRemoteChange'' (return folders) syncDir
-    remoteFileChanges <- mapM (\f -> (checkRemoteChange'' (docsInFolder token manager f) . combine syncDir . F.filenameStr) f) folders
-    return $ or $ isRemoteFolderChange : remoteFileChanges
-    where
-        docsInFolder token' manager folder = do
-            folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
-            fullFolder <- getFolder token' manager folderLink
-            return $ filter DP.uploaded $ DP.document $ fromMaybe (DP.Documents []) (DP.documents fullFolder)
-
-checkRemoteChange'' :: (F.File a) => ResourceT IO [a] -> FilePath -> ResourceT IO Bool
-checkRemoteChange'' listFunc syncDir = do
-    remoteFiles <- listFunc
-    let syncFile = F.syncFile syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
-    return $ not $ null (remoteFiles `F.diff` lastState) && null (lastState `F.diff` remoteFiles)
 
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
