@@ -46,12 +46,15 @@ ftUp (_, []) = Nothing
 ftRight :: FTZipper -> Maybe FTZipper
 ftRight (item, FTCtx name ls (r:rs) f:bs) = Just (r, FTCtx name (ls ++ [item]) rs f:bs)
 ftRight (_, FTCtx _ _ [] _:_) = Nothing
-ftRight (_, []) = error "cannot go rigth from root node"
+ftRight (_, []) = Nothing
 
 ftDown :: FTZipper -> Maybe FTZipper
 ftDown (Dir name (c:cs) f, bs) = Just (c, FTCtx name [] cs f:bs)
 ftDown (Dir _ [] _, _) = Nothing
 ftDown (File _ _, _) = error "cannot go down into file"
+
+syncDirName :: String
+syncDirName = "Digipostarkiv"
 
 readSyncState :: FilePath -> IO FileTree
 readSyncState syncFile = do
@@ -59,7 +62,7 @@ readSyncState syncFile = do
     case r of
         Right content -> return $ fromMaybe emptyDir (readMaybe content)
         Left _ -> return emptyDir
-    where emptyDir = Dir "Digipostarkiv" [] Nothing
+    where emptyDir = Dir syncDirName [] Nothing
 
 writeSyncState :: FilePath -> FileTree -> IO ()
 writeSyncState syncFile state = writeFile syncFile (show state)
@@ -81,7 +84,7 @@ getRemoteState = do
     (_, _, _, mbox) <- ask
     let folders = (DP.folder . DP.folders) mbox
     contents <- mapM downloadFolder folders
-    return $ Dir "Digipostarkiv" contents Nothing
+    return $ Dir syncDirName contents Nothing
   where
     downloadFolder :: DP.Folder -> ApiAction FileTree
     downloadFolder folder = do
@@ -100,13 +103,13 @@ instance Eq FileTree where
   _ == _ = False
 
 treeDiff :: FileTree -> FileTree -> Maybe FileTree
-treeDiff ft1@(Dir name1 contents1 folder1) ft2@(Dir name2 contents2 _)
+treeDiff ft1@(Dir name1 contents1 folder1) ft2@(Dir name2 contents2 folder2)
     | ft1 == ft2 = Nothing
     | name1 == name2 =
         let contentDiff = contents1 `diff` contents2
         in if null contentDiff
            then Nothing
-           else Just $ Dir name1 contentDiff folder1
+           else Just $ Dir name1 contentDiff (folder1 `orElse` folder2)
 treeDiff ft1 ft2
     | ft1 == ft2 = Nothing
     | otherwise = Just ft1
@@ -119,6 +122,10 @@ diff = foldl (flip deleteFrom)
       Nothing -> ys
       Just ft -> ft : deleteFrom x ys
 
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse mx my = case mx of
+  Nothing -> my
+  Just x -> Just x
 
 --for now does not consider locally deleted files to ensure
 --we dont acidentally delete all files on server
@@ -131,9 +138,11 @@ deletedOnServer previous remote = previous `treeDiff` remote
 
 newLocal :: FileTree -> FileTree -> FileTree -> Maybe FileTree
 newLocal local previous remote = do
-    new <- local `treeDiff` remote
-    deleted <- deletedOnServer previous remote
-    new `treeDiff` deleted
+  new <- local `treeDiff` remote
+  case deletedOnServer previous remote of
+    Nothing -> return new
+    Just d -> new `treeDiff` d
+
 
 
 --deletedLocal :: FileTree -> FileTree -> FileTree -> FileTree
@@ -142,34 +151,53 @@ ftName :: FileTree -> String
 ftName (File name _) = name
 ftName (Dir name _ _) = name
 
-fullPath :: FTZipper -> FilePath
-fullPath z@(item, _) = case ftUp z of
-  Nothing -> name
-  Just parentZipper -> fullPath parentZipper `combine` name
+fullPath :: FilePath -> FTZipper -> FilePath
+fullPath syncDir z@(item, _) = case ftUp z of
+  Nothing -> takeDirectory syncDir `combine` name
+  Just parentZipper -> fullPath syncDir parentZipper `combine` name
   where name = ftName item
 
-download :: FTZipper -> ApiAction ()
-download z@(File _ (Just remoteDoc), _) = Sync.downloadDocument (fullPath z) remoteDoc
-download (File _ Nothing, _) = error "Either file at root node of no remote document"
-download z@(Dir{}, _) = do
-  liftIO $ createDirectoryIfMissing True (fullPath z)
-  maybe (return ()) download (ftDown z)
-  maybe (return ()) download (ftRight z)
+download :: FilePath -> FTZipper -> ApiAction ()
+download syncDir z@(File _ (Just remoteDoc), _) = do
+  Sync.downloadDocument (fullPath syncDir z) remoteDoc
+  maybe (return ()) (download syncDir) (ftRight z)
+download _ (File _ Nothing, _) = error "Either file at root node of no remote document"
+download syncDir z@(Dir{}, _) = do
+  liftIO $ createDirectoryIfMissing True (fullPath syncDir z)
+  maybe (return ()) (download syncDir) (ftDown z)
+  maybe (return ()) (download syncDir) (ftRight z)
 
-upload :: FTZipper -> ApiAction ()
-upload (File name _, FTCtx _ _ _ (Just parentFolder):_) = uploadDocument parentFolder name
-upload (File _ _, _) = error "Either file at root node or no parent remote folder"
-upload z@(Dir name _ _, _) = do
-  createRemoteFolder name
-  maybe (return ()) upload (ftDown z)
-  maybe (return ()) upload (ftRight z)
+--todo constant of Digipostarkiv
+--todo augment local state with remote state docs and folders
+upload :: FilePath -> FTZipper -> ApiAction ()
+upload syncDir z@(File _ _, FTCtx _ _ _ (Just parentFolder):_) = do
+  uploadDocument parentFolder (fullPath syncDir z)
+  maybe (return ()) (upload syncDir) (ftRight z)
+upload _ (File _ _, _) = error "Either file at root node or no parent remote folder"
+upload syncDir (Dir name contents folder, ctx) = do
+  newFolder <- if name /= syncDirName && isNothing folder
+    then liftM Just (createRemoteFolder name)
+    else return folder
+  let newZipper = (Dir name contents newFolder, ctx)
+  maybe (return ()) (upload syncDir) (ftDown newZipper)
+  maybe (return ()) (upload syncDir) (ftRight newZipper)
+
+deleteLocal :: FilePath -> FTZipper -> IO ()
+deleteLocal syncDir z@(File{}, _) = do
+  removeFile (fullPath syncDir z)
+  maybe (return ()) (deleteLocal syncDir) (ftRight z)
+deleteLocal syncDir z@(Dir name [] _, _) =
+  unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
+deleteLocal syncDir z@(Dir{}, _) = do
+  maybe (return ()) (deleteLocal syncDir) (ftDown z)
+  maybe (return ()) (deleteLocal syncDir) (ftRight z)
 
 downloadDocument :: FilePath -> DP.Document -> ApiAction ()
 downloadDocument localPath remoteDoc = do
   (manager, aToken, _, _) <- ask
   liftResourceT $ Api.downloadDocument aToken manager localPath remoteDoc
 
-createRemoteFolder :: Name -> ApiAction ()
+createRemoteFolder :: Name -> ApiAction DP.Folder
 createRemoteFolder folderName = do
   (manager, aToken, csrfToken, mbox) <- ask
   createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
@@ -233,6 +261,29 @@ checkRemoteChange' token = do
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
 
+newSync :: IO ()
+newSync = loadAccessToken >>= handleTokenRefresh newSync'
+
+newSync' :: AccessToken -> IO ()
+newSync' token = do
+    (syncDir, syncFile, previousState, localState) <- initLocalState
+    runResourceT $ do
+      manager <- liftIO $ newManager conduitManagerSettings
+      (root, _) <- getAccount manager token
+      let mbox = head $ DP.mailbox root
+      flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
+        remoteState <- getRemoteState
+        let toDownload = newOnServer localState previousState remoteState
+        liftIO $ debugLog $ "down " ++ show toDownload
+        let toUpload = newLocal localState previousState remoteState
+        liftIO $ debugLog $ "up " ++ show toUpload
+        let toDelete = deletedOnServer previousState remoteState
+        liftIO $ debugLog $ "del " ++ show toDelete
+        maybe (return ()) (download syncDir . ftZipper) toDownload
+        maybe (return ()) (upload syncDir . ftZipper) toUpload
+        liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDelete
+      liftIO $ getLocalState syncDir >>= writeSyncState syncFile
+
 --problem: Hvis man kopierer en katalog får man med .sync-filen og denne vil da ikke bli lastet opp korekt.
 sync' :: AccessToken -> IO ()
 sync' token = runResourceT $ do
@@ -290,7 +341,7 @@ syncFilesInFolder manager csrf token parent folder = do
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do
     homedir <- getHomeDirectory
-    return $ combine homedir "Digipostarkiv"
+    return $ combine homedir syncDirName
 
 getOrCreateSyncDir :: IO FilePath
 getOrCreateSyncDir = do

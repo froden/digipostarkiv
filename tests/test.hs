@@ -25,9 +25,9 @@ unitTests = testGroup "Unit tests"
           Just _ -> return ()
 
   , testCase "Compute full path" $
-      case fullPath <$> ftDown zipper of
+      case fullPath "." <$> ftDown zipper of
           Nothing -> assertFailure "Expected full path"
-          Just p -> assertEqual "" "Digipostarkiv/fileA" p
+          Just p -> assertEqual "" "./Digipostarkiv/fileA" p
 
   , testCase "Diff of equal trees is Nothing" $
       case treeDiff tree tree of
@@ -95,6 +95,15 @@ unitTests = testGroup "Unit tests"
       in case newLocal local previous remote of
           Nothing -> assertFailure "Expected diff"
           Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing] Nothing) f
+
+  , testCase "compute newLocal2" $
+      let
+        local = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+        previous = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+      in case newLocal local previous remote of
+          Nothing -> assertFailure "Expected diff"
+          Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing) f
   ]
 
 emptyTree :: FileTree

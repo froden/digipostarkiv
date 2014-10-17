@@ -93,11 +93,10 @@ getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a
 getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
 downloadDocument :: Session -> Manager -> FilePath -> DP.Document -> ResourceT IO ()
-downloadDocument session manager syncDir document = do
+downloadDocument session manager targetFile document = do
     req <- downloadDocRequest session document
     res <- http req manager
     responseBody res $$+- sinkFile targetFile
-    where targetFile = combine syncDir $ DP.filename document
 
 downloadDocRequest :: Session -> DP.Document -> ResourceT IO Request
 downloadDocRequest session document = contentLink >>= requestFromLink
@@ -124,7 +123,7 @@ uploadFileMultipart session manager uploadLink token file = do
     --responseBody res $$+- sinkFile "temp.txt"
     return ()
 
-createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO ()
+createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO DP.Folder
 createFolder session manager createLink csrf folderName = do
     let jsonBody = encode (DP.Folder folderName "FOLDER" [] Nothing)
     let body = RequestBodyLBS jsonBody
@@ -133,5 +132,4 @@ createFolder session manager createLink csrf folderName = do
            setSession session <$>
            setMethod "POST" <$>
            parseUrl (DP.uri createLink)
-    _ <- http req manager
-    return ()
+    httpLbs req manager >>= (decodeOrException . responseBody)
