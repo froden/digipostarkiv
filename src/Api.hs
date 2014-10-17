@@ -52,10 +52,10 @@ decodeOrException json = case decode json of
     Nothing -> liftIO $ throwIO $ JsonParseException json
     Just decoded -> return decoded
 
-getAccount :: Manager -> Session -> ResourceT IO (DP.Root, DP.Account)
+getAccount :: Manager -> Session -> ResourceT IO (DP.Root, DP.Account, DP.Mailbox)
 getAccount manager session = do
     root <- getRoot manager session
-    return (root, DP.primaryAccount root)
+    return (root, DP.primaryAccount root, head $ DP.mailbox root)
 
 getDocs :: Manager -> Session -> DP.Link -> ResourceT IO [DP.Document]
 getDocs manager session docsLink = do

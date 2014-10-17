@@ -209,11 +209,6 @@ uploadDocument folder localPath = do
     uploadLink <- liftIO $ linkOrException "upload_document" $ DP.folderLinks folder
     liftResourceT $ uploadFileMultipart aToken manager uploadLink csrfToken localPath
 
---delete :: FileTree -> IO ()
---delete (File localPath _) = deleteFile localPath
---delete (Dir localPath _ _) = deleteDir localPath
-
-
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
     where
@@ -251,8 +246,7 @@ checkRemoteChange' token = do
     (_, _, previousState, _) <- initLocalState
     runResourceT $ do
       manager <- liftIO $ newManager conduitManagerSettings
-      (root, _) <- getAccount manager token
-      let mbox = head $ DP.mailbox root
+      (root, _, mbox) <- getAccount manager token
       remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
       let added = remoteState `treeDiff` previousState
       let deleted = previousState `treeDiff` remoteState
@@ -261,16 +255,12 @@ checkRemoteChange' token = do
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
 
-newSync :: IO ()
-newSync = loadAccessToken >>= handleTokenRefresh newSync'
-
-newSync' :: AccessToken -> IO ()
-newSync' token = do
+sync' :: AccessToken -> IO ()
+sync' token = do
     (syncDir, syncFile, previousState, localState) <- initLocalState
     runResourceT $ do
       manager <- liftIO $ newManager conduitManagerSettings
-      (root, _) <- getAccount manager token
-      let mbox = head $ DP.mailbox root
+      (root, _, mbox) <- getAccount manager token
       flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
         remoteState <- getRemoteState
         let toDownload = newOnServer localState previousState remoteState
@@ -283,60 +273,6 @@ newSync' token = do
         maybe (return ()) (upload syncDir . ftZipper) toUpload
         liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDelete
       liftIO $ getLocalState syncDir >>= writeSyncState syncFile
-
---problem: Hvis man kopierer en katalog får man med .sync-filen og denne vil da ikke bli lastet opp korekt.
-sync' :: AccessToken -> IO ()
-sync' token = runResourceT $ do
-    syncDir <- liftIO getOrCreateSyncDir
-    manager <- liftIO $ newManager conduitManagerSettings
-    (root, _) <- getAccount manager token
-    let mbox = head $ DP.mailbox root
-    let csrf = DP.csrfToken root
-    syncFolders manager csrf token mbox syncDir
-    mailboxLink <- liftIO $ linkOrException "self" $ DP.mailboxLinks mbox
-    liftIO $ debugLog $ "getting mailbox: " ++ show mailboxLink
-    --bug i digipost: får 404 når man henter mailbox med self-link
-    --mbox' <- getMailbox token manager mailboxLink
-    (root', _) <- getAccount manager token
-    let mbox' = head $ DP.mailbox root'
-    liftIO $ debugLog "got mailbox"
-    let folders = (DP.folder . DP.folders) mbox'
-    void $ mapM (syncFilesInFolder manager csrf token syncDir) folders
-
-syncFolders :: Manager -> CSRFToken -> AccessToken -> DP.Mailbox -> FilePath -> ResourceT IO ()
-syncFolders manager csrf token mbox syncDir = do
-    let folders = DP.folder $ DP.folders mbox
-    let syncFile = F.syncFile syncDir
-    localFolders <- liftIO $ F.existingFolders' syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
-    let (newRemoteFolders, newLocalFolders, deletedRemoteFolders) = F.syncDiff lastState localFolders folders
-    liftIO $ logDiff newRemoteFolders newLocalFolders deletedRemoteFolders
-    liftIO $ F.createFolders syncDir $ map DP.folderName newRemoteFolders
-    createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
-    void $ mapM (createFolder token manager createFolderLink csrf . F.name) newLocalFolders
-    liftIO $ F.deleteAllFolders syncDir $ map F.name deletedRemoteFolders
-    newState <- liftIO $ F.existingFolders syncDir
-    liftIO $ F.writeSyncFile syncFile newState
-
-
-syncFilesInFolder :: Manager -> CSRFToken -> AccessToken -> FilePath -> DP.Folder -> ResourceT IO ()
-syncFilesInFolder manager csrf token parent folder = do
-    liftIO $ debugLog $ "Syncing: " ++ DP.folderName folder
-    let syncDir = combine parent $ DP.folderName folder
-    folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
-    fullFolder <- getFolder token manager folderLink
-    let documents = filter DP.uploaded $ DP.document $ fromMaybe (DP.Documents []) (DP.documents fullFolder)
-    let syncFile = F.syncFile syncDir
-    files <- liftIO $ F.existingFiles' syncDir
-    lastState <- liftIO $ F.readSyncFile' syncFile
-    let (docsToDownload, newFiles, deletedFiles) = F.syncDiff lastState files documents
-    liftIO $ logDiff docsToDownload newFiles deletedFiles
-    downloadAll token manager syncDir docsToDownload
-    uploadLink <- liftIO $ linkOrException "upload_document" $ DP.folderLinks fullFolder
-    uploadAll token manager uploadLink csrf $ map (combine syncDir . F.name) newFiles
-    liftIO $ F.deleteAll syncDir $ map F.name deletedFiles
-    newState <- liftIO $ F.existingFiles syncDir
-    liftIO $ F.writeSyncFile syncFile newState
 
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do
