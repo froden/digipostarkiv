@@ -16,7 +16,6 @@ import Text.Read (readMaybe)
 
 import Api
 import qualified ApiTypes as DP
-import qualified File as F
 import Oauth
 import Http (AccessToken)
 import Error
@@ -70,7 +69,7 @@ writeSyncState syncFile state = writeFile syncFile (show state)
 getLocalState :: FilePath -> IO FileTree
 getLocalState dirPath = do
     names <- getDirectoryContents dirPath
-    let properNames = filter (not . isPrefixOf ".") $ filter (`notElem` [".", ".."]) names
+    let properNames = filter (not . specialFiles) names
     content <- forM properNames $ \name -> do
         let subPath = dirPath </> name
         isDirectory <- doesDirectoryExist subPath
@@ -78,6 +77,7 @@ getLocalState dirPath = do
             then getLocalState subPath
             else return (File name Nothing)
     return $ Dir (takeFileName dirPath) content Nothing
+    where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getRemoteState :: ApiAction FileTree
 getRemoteState = do
@@ -226,7 +226,7 @@ handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
 initLocalState :: IO (FilePath, FilePath, FileTree, FileTree)
 initLocalState = do
     syncDir <- getOrCreateSyncDir
-    let syncFile = F.syncFile syncDir
+    let syncFile = getSyncFile syncDir
     previousState <- readSyncState syncFile
     localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
@@ -282,14 +282,11 @@ getUserSyncDir = do
 getOrCreateSyncDir :: IO FilePath
 getOrCreateSyncDir = do
     syncDir <- getUserSyncDir
-    F.createSyncDir syncDir
+    createDirectoryIfMissing True syncDir
     return syncDir
 
-logDiff :: (F.File a, F.File b) => [a] -> [b] -> [b] -> IO ()
-logDiff toDownload toUpload deleted = void $ mapM debugLog [
-                            "download: [" ++ intercalate ", " (map F.filenameStr toDownload) ++ "]",
-                            "upload: [" ++ intercalate ", " (map F.filenameStr toUpload) ++ "]",
-                            "deleted: [" ++ intercalate ", " (map F.filenameStr deleted) ++ "]" ]
+getSyncFile :: FilePath -> FilePath
+getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
 debugLog = putStrLn
