@@ -52,6 +52,15 @@ ftDown (Dir name (c:cs) f, bs) = Just (c, FTCtx name [] cs f:bs)
 ftDown (Dir _ [] _, _) = Nothing
 ftDown (File _ _, _) = error "cannot go down into file"
 
+ftTraverse :: Monad m => (FTZipper -> m FTZipper) -> FTZipper -> m ()
+ftTraverse action z@(File{}, _) = do
+  nz <- action z
+  maybe (return ()) (ftTraverse action) (ftRight nz)
+ftTraverse action z@(Dir{}, _) = do
+  nz <- action z
+  maybe (return ()) (ftTraverse action) (ftDown nz)
+  maybe (return ()) (ftTraverse action) (ftRight nz)
+
 syncDirName :: String
 syncDirName = "Digipostarkiv"
 
@@ -143,10 +152,6 @@ newLocal local previous remote = do
     Nothing -> return new
     Just d -> new `treeDiff` d
 
-
-
---deletedLocal :: FileTree -> FileTree -> FileTree -> FileTree
-
 ftName :: FileTree -> String
 ftName (File name _) = name
 ftName (Dir name _ _) = name
@@ -157,14 +162,6 @@ fullPath syncDir z@(item, _) = case ftUp z of
   Just parentZipper -> fullPath syncDir parentZipper `combine` name
   where name = ftName item
 
-ftTraverse :: Monad m => (FTZipper -> m FTZipper) -> FTZipper -> m ()
-ftTraverse action z@(File{}, _) = do
-  nz <- action z
-  maybe (return ()) (ftTraverse action) (ftRight nz)
-ftTraverse action z@(Dir{}, _) = do
-  nz <- action z
-  maybe (return ()) (ftTraverse action) (ftDown nz)
-  maybe (return ()) (ftTraverse action) (ftRight nz)
 
 download :: FilePath -> FTZipper -> ApiAction ()
 download syncDir = ftTraverse download'
