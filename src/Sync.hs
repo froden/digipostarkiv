@@ -157,40 +157,51 @@ fullPath syncDir z@(item, _) = case ftUp z of
   Just parentZipper -> fullPath syncDir parentZipper `combine` name
   where name = ftName item
 
-download :: FilePath -> FTZipper -> ApiAction ()
-download syncDir z@(File _ (Just remoteDoc), _) = do
-  Sync.downloadDocument (fullPath syncDir z) remoteDoc
-  maybe (return ()) (download syncDir) (ftRight z)
-download _ (File _ Nothing, _) = error "Either file at root node of no remote document"
-download syncDir z@(Dir{}, _) = do
-  liftIO $ createDirectoryIfMissing True (fullPath syncDir z)
-  maybe (return ()) (download syncDir) (ftDown z)
-  maybe (return ()) (download syncDir) (ftRight z)
+ftTraverse :: Monad m => (FTZipper -> m FTZipper) -> FTZipper -> m ()
+ftTraverse action z@(File{}, _) = do
+  nz <- action z
+  maybe (return ()) (ftTraverse action) (ftRight nz)
+ftTraverse action z@(Dir{}, _) = do
+  nz <- action z
+  maybe (return ()) (ftTraverse action) (ftDown nz)
+  maybe (return ()) (ftTraverse action) (ftRight nz)
 
---todo constant of Digipostarkiv
---todo augment local state with remote state docs and folders
+download :: FilePath -> FTZipper -> ApiAction ()
+download syncDir = ftTraverse download'
+  where
+    download' :: FTZipper -> ApiAction FTZipper
+    download' z@(File _ (Just remoteDoc), _) =
+      Sync.downloadDocument (fullPath syncDir z) remoteDoc >> return z
+    download' (File _ Nothing, _) =
+      error "Either file at root node of no remote document"
+    download' z@(Dir{}, _) =
+      liftIO $ createDirectoryIfMissing True (fullPath syncDir z) >> return z
+
+
 upload :: FilePath -> FTZipper -> ApiAction ()
-upload syncDir z@(File _ _, FTCtx _ _ _ (Just parentFolder):_) = do
-  uploadDocument parentFolder (fullPath syncDir z)
-  maybe (return ()) (upload syncDir) (ftRight z)
-upload _ (File _ _, _) = error "Either file at root node or no parent remote folder"
-upload syncDir (Dir name contents folder, ctx) = do
-  newFolder <- if name /= syncDirName && isNothing folder
-    then liftM Just (createRemoteFolder name)
-    else return folder
-  let newZipper = (Dir name contents newFolder, ctx)
-  maybe (return ()) (upload syncDir) (ftDown newZipper)
-  maybe (return ()) (upload syncDir) (ftRight newZipper)
+upload syncDir = ftTraverse upload'
+  where
+    upload' :: FTZipper -> ApiAction FTZipper
+    upload' z@(File _ _, FTCtx _ _ _ (Just parentFolder):_) =
+      uploadDocument parentFolder (fullPath syncDir z) >> return z
+    upload' (File _ _, _) = error "Either file at root node or no parent remote folder"
+    upload' (Dir name contents folder, ctx) = do
+      newFolder <- if name /= syncDirName && isNothing folder
+        then liftM Just (createRemoteFolder name)
+        else return folder
+      return (Dir name contents newFolder, ctx)
+
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
-deleteLocal syncDir z@(File{}, _) = do
-  removeFile (fullPath syncDir z)
-  maybe (return ()) (deleteLocal syncDir) (ftRight z)
-deleteLocal syncDir z@(Dir name [] _, _) =
-  unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
-deleteLocal syncDir z@(Dir{}, _) = do
-  maybe (return ()) (deleteLocal syncDir) (ftDown z)
-  maybe (return ()) (deleteLocal syncDir) (ftRight z)
+deleteLocal syncDir = ftTraverse deleteLocal'
+  where
+    deleteLocal' :: FTZipper -> IO FTZipper
+    deleteLocal' z@(File{}, _) = removeFile (fullPath syncDir z) >> return z
+    deleteLocal' z@(Dir name [] _, _) = do
+      unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
+      return z
+    deleteLocal' z@(Dir{}, _) = return z
+
 
 downloadDocument :: FilePath -> DP.Document -> ApiAction ()
 downloadDocument localPath remoteDoc = do
@@ -255,6 +266,7 @@ checkRemoteChange' token = do
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
 
+--bedre feil-logging
 sync' :: AccessToken -> IO ()
 sync' token = do
     (syncDir, syncFile, previousState, localState) <- initLocalState
@@ -289,5 +301,5 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
-debugLog = putStrLn
---debugLog _ = return ()
+--debugLog = putStrLn
+debugLog _ = return ()
