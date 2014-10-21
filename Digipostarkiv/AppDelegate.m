@@ -95,8 +95,7 @@
     return authCode;
 }
 
-//TODO: synk lokalt eller full styres herfra
-//TODO: legge på blått ikon når det faktisk er noe å synke?
+
 - (IBAction)sync:(id)sender {
     if (hsLoggedIn()) {
         [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
