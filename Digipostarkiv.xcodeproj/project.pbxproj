@@ -22,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8C0D0C6619F529E90034BAA6 /* libgmp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgmp.a; path = ../../../../../usr/local/lib/libgmp.a; sourceTree = "<group>"; };
 		DE0139811941C5A60081B26E /* digipost-black.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-black.png"; sourceTree = "<group>"; };
 		DE0139821941C5A60081B26E /* digipost-red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-red.png"; sourceTree = "<group>"; };
 		DE0139831941C5A60081B26E /* digipost-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-white.png"; sourceTree = "<group>"; };
@@ -82,6 +83,7 @@
 		DEB1EF591906F23A008C83D2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8C0D0C6619F529E90034BAA6 /* libgmp.a */,
 				DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */,
 				DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */,
 				DEB1EF791906F23A008C83D2 /* XCTest.framework */,
@@ -342,12 +344,10 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
-					"/usr/local/lib/**",
 				);
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
-					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.3/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
@@ -369,12 +369,10 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
-					"/usr/local/lib/**",
 				);
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
-					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.3/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
