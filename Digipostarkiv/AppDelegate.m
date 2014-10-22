@@ -96,9 +96,18 @@
 }
 
 
-- (IBAction)sync:(id)sender {
+- (IBAction)manualSync:(id)sender {
     if (hsLoggedIn()) {
-        [self performSelectorInBackground:@selector(digipostSync:) withObject:false];
+        [self performSelectorInBackground:@selector(fullSync) withObject:false];
+    } else {
+        [self stopSyncTimer];
+        [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+    }
+}
+
+- (void)sync {
+    if (hsLoggedIn()) {
+        [self performSelectorInBackground:@selector(detectChangeAndSync:) withObject:false];
     } else {
         [self stopSyncTimer];
         [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
@@ -123,7 +132,7 @@
     if (syncTimer == nil || ![syncTimer isValid]) {
         syncTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
                                                     target:self
-                                                    selector:@selector(sync:)
+                                                    selector:@selector(sync)
                                                     userInfo:nil
                                                     repeats:true];
     }
@@ -138,7 +147,7 @@
 }
 
 
-- (void)digipostSync:(NSTimer*)timer {
+- (void)detectChangeAndSync:(NSTimer*)timer {
     if (syncInProgress) {
         return;
     }
@@ -147,18 +156,19 @@
     BOOL remoteSync = checkRemote && hsRemoteChanges();
     BOOL localSync = !checkRemote && hsLocalChanges();
     if (localSync || remoteSync) {
-        [self syncsync];
+        [self fullSync];
     }
     syncInProgress = false;
 }
 
-- (void)syncsync {
+- (void)fullSync {
     [statusItem setImage:statusImageActive];
     int result = hsSync();
     if (result != 0) {
         if (result == 1) {
             [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
         } else {
+            //TODO: give up after n failures?
             NSLog(@"Unhandled syncresult: %i", result);
         }
     }

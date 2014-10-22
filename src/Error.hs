@@ -6,6 +6,6 @@ import Control.Exception
 import Network.HTTP.Conduit
 import Data.Typeable
 
-data SyncError = NotAuthenticated | HttpFailed HttpException deriving (Show, Typeable)
+data SyncError = NotAuthenticated | HttpFailed HttpException | Unhandled SomeException deriving (Show, Typeable)
 
 instance Exception SyncError

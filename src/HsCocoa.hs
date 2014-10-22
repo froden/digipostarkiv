@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module HsCocoa where
 
 import Foreign.C
@@ -29,19 +31,19 @@ hsAccessToken :: CString -> CString -> IO CInt
 hsAccessToken s c = do
 	state <- peekCString s
 	code <- peekCString c
-	result <- try $ O.accessToken (O.State state) (O.AuthCode code)
+	result <- tryAny $ O.accessToken (O.State state) (O.AuthCode code)
 	case result of
 		Right token -> O.storeAccessToken token >> return 0
 		Left NotAuthenticated -> return 1
-		Left _ -> return 99
+		Left e -> printError e >> return 99
 
 hsSync :: IO CInt
 hsSync = do
-	result <- try sync
-	case result of
+	res <- tryAny sync
+	case res of
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
-		Left (HttpFailed e) -> print e >> return 99
+		Left e -> printError e >> return 99
 
 hsLogout :: IO ()
 hsLogout = O.removeAccessToken
@@ -54,3 +56,15 @@ hsLocalChanges = checkLocalChange
 
 hsRemoteChanges :: IO Bool
 hsRemoteChanges = checkRemoteChange
+
+tryAny :: IO a -> IO (Either SyncError a)
+tryAny action = do
+	result <- try action
+	case result of
+		Right x -> return $ Right x
+		Left e -> case fromException e of
+			Just (se :: SyncError) -> return $ Left se
+			Nothing -> return $ Left (Unhandled e)
+
+printError :: SyncError -> IO ()
+printError e = print ("SyncError: " ++ show e)

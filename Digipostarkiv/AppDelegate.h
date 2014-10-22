@@ -29,14 +29,15 @@
 
 - (IBAction)openArchiveFolder:(id)sender;
 
-- (IBAction)sync:(id)sender;
+- (IBAction)manualSync:(id)sender;
 
 - (NSString*)parseCode:(NSURL*)url;
 
-- (void)digipostSync:(NSTimer*)timer;
+- (void)sync;
+- (void)detectChangeAndSync:(NSTimer*)timer;
 
 - (void)stopSyncTimer;
 - (void)startSyncTimer;
-- (void)syncsync;
+- (void)fullSync;
 
 @end

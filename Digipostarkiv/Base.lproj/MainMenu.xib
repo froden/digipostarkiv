@@ -681,7 +681,7 @@
                 <menuItem title="Synkroniser nå" id="HT6-xw-0TF">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="sync:" target="Voe-Tx-rLC" id="bBd-Tk-yxB"/>
+                        <action selector="manualSync:" target="Voe-Tx-rLC" id="3CO-RM-G5D"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Logg inn" id="Ceh-0h-cdn">
@@ -703,11 +703,12 @@
                     </connections>
                 </menuItem>
             </items>
+            <point key="canvasLocation" x="243.5" y="-988.5"/>
         </menu>
         <window title="Logg inn med Digipost" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="e29-41-klv">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="456" y="228" width="800" height="800"/>
+            <rect key="contentRect" x="456" y="77" width="800" height="800"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <view key="contentView" id="6y3-hc-r97">
                 <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
