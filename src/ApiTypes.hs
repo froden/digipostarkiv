@@ -27,12 +27,13 @@ linkWithRel relation = find $ isSuffixOf relation . rel
 
 filename :: Document -> String
 filename doc = baseName ++ suffix
-    where baseName = subject doc
+    where baseName = convertSpecialChars $ subject doc
           filetype = '.' : fileType doc
           suffix
             | filetype == "." = ""
             | filetype `isSuffixOf` baseName = ""
             | otherwise = filetype
+          convertSpecialChars = map (\c -> if c == '/' then ':' else c)
 
 lowerCaseFilename :: Document -> String
 lowerCaseFilename = map toLower . filename

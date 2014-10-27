@@ -11,6 +11,7 @@ import System.FilePath.Posix
 import Data.List
 import Data.Maybe
 import System.Directory
+import System.IO.Error
 import Control.Exception
 import Text.Read (readMaybe)
 
@@ -193,12 +194,17 @@ deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverse deleteLocal'
   where
     deleteLocal' :: FTZipper -> IO FTZipper
-    deleteLocal' z@(File{}, _) = removeFile (fullPath syncDir z) >> return z
+    deleteLocal' z@(File{}, _) = removeIfExists (fullPath syncDir z) >> return z
     deleteLocal' z@(Dir name [] _, _) = do
       unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
       return z
     deleteLocal' z@(Dir{}, _) = return z
 
+removeIfExists :: FilePath -> IO ()
+removeIfExists fileName = removeFile fileName `catch` handleExists
+  where handleExists e
+          | isDoesNotExistError e = return ()
+          | otherwise = throwIO e
 
 downloadDocument :: FilePath -> DP.Document -> ApiAction ()
 downloadDocument localPath remoteDoc = do

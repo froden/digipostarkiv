@@ -115,7 +115,9 @@ uploadAll session manager uploadLink token = void . mapM upload
 uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO ()
 uploadFileMultipart session manager uploadLink token file = do
     req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
-    multipartReq <- formDataBody [partBS "subject" (UTF8.fromString $ takeBaseName file),
+    let convertSpecialChars = map (\c -> if c == ':' then '/' else c)
+    let subject = UTF8.fromString . convertSpecialChars . takeBaseName $ file
+    multipartReq <- formDataBody [partBS "subject" subject,
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
     _ <- http multipartReq manager
