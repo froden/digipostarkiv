@@ -27,13 +27,12 @@ linkWithRel relation = find $ isSuffixOf relation . rel
 
 filename :: Document -> String
 filename doc = baseName ++ suffix
-    where baseName = convertSpecialChars $ subject doc
+    where baseName = remoteToLocalName $ subject doc
           filetype = '.' : fileType doc
           suffix
             | filetype == "." = ""
             | filetype `isSuffixOf` baseName = ""
             | otherwise = filetype
-          convertSpecialChars = map (\c -> if c == '/' then ':' else c)
 
 lowerCaseFilename :: Document -> String
 lowerCaseFilename = map toLower . filename
@@ -41,7 +40,11 @@ lowerCaseFilename = map toLower . filename
 uploaded :: Document -> Bool
 uploaded = ("UPLOADED" ==) . origin
 
+remoteToLocalName :: String -> String
+remoteToLocalName = map (\c -> if c == '/' then ':' else c)
 
+localToRemoteName :: String -> String
+localToRemoteName = map (\c -> if c == ':' then '/' else c)
 
 instance FromJSON Link
 instance ToJSON Link

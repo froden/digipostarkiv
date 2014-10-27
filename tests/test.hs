@@ -4,6 +4,7 @@ import Test.Tasty.HUnit
 import Control.Applicative
 
 import Sync
+import File
 
 main :: IO ()
 main = defaultMain tests
@@ -32,12 +33,12 @@ unitTests = testGroup "Unit tests"
   , testCase "Diff of equal trees is Nothing" $
       case treeDiff tree tree of
           Nothing -> return ()
-          Just f -> assertFailure $ "Diff was: " ++ (show f)
+          Just f -> assertFailure $ "Diff was: " ++ show f
 
   , testCase "Diff with super set tree is Nothing" $
       case treeDiff tree (Dir "Digipostarkiv" [File "fileB" Nothing, File "fileA" Nothing] Nothing) of
           Nothing -> return ()
-          Just f -> assertFailure $ "Diff was: " ++ (show f)
+          Just f -> assertFailure $ "Diff was: " ++ show f
 
   , testCase "Diff equal dir missing file" $
       case treeDiff tree (Dir "Digipostarkiv" [] Nothing) of

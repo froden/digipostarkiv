@@ -22,7 +22,6 @@ import Control.Applicative
 import Http
 import qualified ApiTypes as DP
 
-
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
 
 instance Exception ApiException
@@ -115,8 +114,7 @@ uploadAll session manager uploadLink token = void . mapM upload
 uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO ()
 uploadFileMultipart session manager uploadLink token file = do
     req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
-    let convertSpecialChars = map (\c -> if c == ':' then '/' else c)
-    let subject = UTF8.fromString . convertSpecialChars . takeBaseName $ file
+    let subject = UTF8.fromString . DP.localToRemoteName . takeBaseName $ file
     multipartReq <- formDataBody [partBS "subject" subject,
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
