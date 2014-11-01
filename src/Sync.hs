@@ -30,10 +30,10 @@ syncDirName = "Digipostarkiv"
 
 readSyncState :: FilePath -> IO FileTree
 readSyncState syncFile = do
-    r <- try (readFile syncFile) :: IO (Either IOException String)
-    case r of
-        Right content -> return $ fromMaybe emptyDir (readMaybe content)
-        Left _ -> return emptyDir
+        r <- try (readFile syncFile) :: IO (Either IOException String)
+        case r of
+            Right content -> return $ fromMaybe emptyDir (readMaybe content)
+            Left _ -> return emptyDir
     where emptyDir = Dir syncDirName [] Nothing
 
 writeSyncState :: FilePath -> FileTree -> IO ()
@@ -41,15 +41,15 @@ writeSyncState syncFile state = writeFile syncFile (show state)
 
 getLocalState :: FilePath -> IO FileTree
 getLocalState dirPath = do
-    names <- getDirectoryContents dirPath
-    let properNames = filter (not . specialFiles) names
-    content <- forM properNames $ \name -> do
-        let subPath = dirPath </> name
-        isDirectory <- doesDirectoryExist subPath
-        if isDirectory
-            then getLocalState subPath
-            else return (File name Nothing)
-    return $ Dir (takeFileName dirPath) content Nothing
+        names <- getDirectoryContents dirPath
+        let properNames = filter (not . specialFiles) names
+        content <- forM properNames $ \name -> do
+            let subPath = dirPath </> name
+            isDirectory <- doesDirectoryExist subPath
+            if isDirectory
+                then getLocalState subPath
+                else return (File name Nothing)
+        return $ Dir (takeFileName dirPath) content Nothing
     where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getRemoteState :: ApiAction FileTree
@@ -61,12 +61,12 @@ getRemoteState = do
   where
     downloadFolder :: DP.Folder -> ApiAction FileTree
     downloadFolder folder = do
-      (manager, aToken, _, _) <- ask
-      folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
-      fullFolder <- liftResourceT $ getFolder aToken manager folderLink
-      let documents = filter DP.uploaded (DP.documentInFolder fullFolder)
-      let files = map docToFile documents
-      return $ Dir (DP.folderName folder) files (Just folder)
+        (manager, aToken, _, _) <- ask
+        folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
+        fullFolder <- liftResourceT $ getFolder aToken manager folderLink
+        let documents = filter DP.uploaded (DP.documentInFolder fullFolder)
+        let files = map docToFile documents
+        return $ Dir (DP.folderName folder) files (Just folder)
       where
         docToFile doc = File (DP.filename doc) (Just doc)
 
