@@ -337,6 +337,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
+				GHC_VERSION = 7.8.2;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -348,7 +349,7 @@
 					"-liconv",
 				);
 				PRODUCT_NAME = Digipostarkiv;
-				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.3/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;
 			};
@@ -362,6 +363,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
+				GHC_VERSION = 7.8.2;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -373,7 +375,7 @@
 					"-liconv",
 				);
 				PRODUCT_NAME = Digipostarkiv;
-				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-7.8.3/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;
 			};
