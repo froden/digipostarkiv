@@ -75,8 +75,9 @@ unitTests = testGroup "Unit tests"
   , testCase "compute newOnServer" $
       let
         local = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
-        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
-      in case newOnServer local emptyTree remote of
+        previous = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileC" Nothing] Nothing] Nothing
+        remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing, File "fileB" Nothing, File "fileC" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing
+      in case newOnServer local previous remote of
           Nothing -> assertFailure "Expected diff"
           Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing) f
 

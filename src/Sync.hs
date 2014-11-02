@@ -74,17 +74,26 @@ getRemoteState = do
 --we dont acidentally delete all files on server
 --files deleted locally will be restored from server
 newOnServer :: FileTree -> FileTree -> FileTree -> Maybe FileTree
-newOnServer local _ remote = remote `treeDiff` local
+newOnServer local previous remote = newFiles remote previous local
 
 deletedOnServer :: FileTree -> FileTree -> Maybe FileTree
-deletedOnServer previous remote = previous `treeDiff` remote
+deletedOnServer = deletedFiles
+
+deletedLocal :: FileTree -> FileTree -> Maybe FileTree
+deletedLocal = deletedFiles
 
 newLocal :: FileTree -> FileTree -> FileTree -> Maybe FileTree
-newLocal local previous remote = do
-  new <- local `treeDiff` remote
-  case deletedOnServer previous remote of
-    Nothing -> return new
-    Just d -> new `treeDiff` d
+newLocal = newFiles
+
+newFiles :: FileTree -> FileTree -> FileTree -> Maybe FileTree
+newFiles x previous y = do
+      new <- x `treeDiff` y
+      case deletedFiles previous y of
+        Nothing -> return new
+        Just d -> new `treeDiff` d
+
+deletedFiles :: FileTree -> FileTree -> Maybe FileTree
+deletedFiles previous x = previous `treeDiff` x
 
 download :: FilePath -> FTZipper -> ApiAction ()
 download syncDir = ftTraverse download'
@@ -204,11 +213,13 @@ sync' token = do
         liftIO $ debugLog $ "down " ++ show toDownload
         let toUpload = newLocal localState previousState remoteState
         liftIO $ debugLog $ "up " ++ show toUpload
-        let toDelete = deletedOnServer previousState remoteState
-        liftIO $ debugLog $ "del " ++ show toDelete
+        let toDeleteLocal = deletedOnServer previousState remoteState
+        liftIO $ debugLog $ "delLocal " ++ show toDeleteLocal
+        let toDeleteRemote = deletedLocal previousState localState
+        liftIO $ debugLog $ "delRemote " ++ show toDeleteRemote
         maybe (return ()) (download syncDir . ftZipper) toDownload
         maybe (return ()) (upload syncDir . ftZipper) toUpload
-        liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDelete
+        liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDeleteLocal
       liftIO $ getLocalState syncDir >>= writeSyncState syncFile
 
 getUserSyncDir :: IO FilePath
@@ -226,5 +237,5 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
---debugLog = putStrLn
-debugLog _ = return ()
+debugLog = putStrLn
+-- debugLog _ = return ()
