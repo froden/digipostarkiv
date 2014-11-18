@@ -120,6 +120,13 @@ upload syncDir = ftTraverse upload'
         else return folder
       return (Dir name contents newFolder, ctx)
 
+deleteRemote :: FTZipper -> ApiAction ()
+deleteRemote = ftTraverse deleteRemote'
+    where
+        deleteRemote' :: FTZipper -> ApiAction FTZipper
+        deleteRemote' z@(File _ (Just remoteDoc), _:_) = deleteDoc remoteDoc >> return z
+        deleteRemote' (Dir name contents folder, ctx) = do
+
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverse deleteLocal'
@@ -153,6 +160,11 @@ uploadDocument folder localPath = do
     (manager, aToken, csrfToken, _) <- ask
     uploadLink <- liftIO $ linkOrException "upload_document" $ DP.folderLinks folder
     liftResourceT $ uploadFileMultipart aToken manager uploadLink csrfToken localPath
+
+deleteDoc :: DP.Document -> ApiAction ()
+deleteDoc document = do
+    (manager, aToken, csrfToken, _) <- ask
+    liftResourceT $ deleteDocument aToken manager csrfToken document
 
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException

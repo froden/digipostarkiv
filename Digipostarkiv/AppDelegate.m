@@ -154,7 +154,13 @@
     syncInProgress = true;
     BOOL checkRemote = runNumber++ % 6 == 0;
     BOOL remoteSync = checkRemote && hsRemoteChanges();
+    if (remoteSync) {
+        NSLog(@"remote change detected");
+    }
     BOOL localSync = !checkRemote && hsLocalChanges();
+    if (localSync) {
+        NSLog(@"local change detected");
+    }
     if (localSync || remoteSync) {
         [self fullSync];
     }
