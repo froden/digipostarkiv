@@ -7,4 +7,5 @@ sync/
 .cabal-sandbox/
 cabal.sandbox.config
 xcuserdata/
+.idea/
 *.iml
