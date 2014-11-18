@@ -10,29 +10,29 @@
 	<string>Digipostarkiv</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>03E827CC-B22A-4A0E-9649-AC3391F62C60</key>
-		<string>ssh://github.com/froden/digipostarkiv.git</string>
+		<key>4DB05D46E39E1F514619BD03DB76F154070656D0</key>
+		<string>github.com:froden/digipostarkiv.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>Digipostarkiv.xcodeproj/project.xcworkspace</string>
+	<string>Digipostarkiv.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>03E827CC-B22A-4A0E-9649-AC3391F62C60</key>
+		<key>4DB05D46E39E1F514619BD03DB76F154070656D0</key>
 		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>ssh://github.com/froden/digipostarkiv.git</string>
+	<string>github.com:froden/digipostarkiv.git</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>03E827CC-B22A-4A0E-9649-AC3391F62C60</string>
+	<string>4DB05D46E39E1F514619BD03DB76F154070656D0</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>03E827CC-B22A-4A0E-9649-AC3391F62C60</string>
+			<string>4DB05D46E39E1F514619BD03DB76F154070656D0</string>
 			<key>IDESourceControlWCCName</key>
 			<string>digipostarkiv</string>
 		</dict>

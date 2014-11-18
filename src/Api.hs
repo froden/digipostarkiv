@@ -22,7 +22,6 @@ import Control.Applicative
 import Http
 import qualified ApiTypes as DP
 
-
 data ApiException = JsonParseException L.ByteString | AuthFailedException | NoLinkFoundException String | Unknown deriving (Typeable)
 
 instance Exception ApiException
@@ -52,10 +51,10 @@ decodeOrException json = case decode json of
     Nothing -> liftIO $ throwIO $ JsonParseException json
     Just decoded -> return decoded
 
-getAccount :: Manager -> Session -> ResourceT IO (DP.Root, DP.Account)
+getAccount :: Manager -> Session -> ResourceT IO (DP.Root, DP.Account, DP.Mailbox)
 getAccount manager session = do
     root <- getRoot manager session
-    return (root, DP.primaryAccount root)
+    return (root, DP.primaryAccount root, head $ DP.mailbox root)
 
 getDocs :: Manager -> Session -> DP.Link -> ResourceT IO [DP.Document]
 getDocs manager session docsLink = do
@@ -93,11 +92,10 @@ getJson :: (FromJSON a) => Manager -> Request -> ResourceT IO a
 getJson manager req = httpLbs req manager >>= (decodeOrException . responseBody)
 
 downloadDocument :: Session -> Manager -> FilePath -> DP.Document -> ResourceT IO ()
-downloadDocument session manager syncDir document = do
+downloadDocument session manager targetFile document = do
     req <- downloadDocRequest session document
     res <- http req manager
     responseBody res $$+- sinkFile targetFile
-    where targetFile = combine syncDir $ DP.filename document
 
 downloadDocRequest :: Session -> DP.Document -> ResourceT IO Request
 downloadDocRequest session document = contentLink >>= requestFromLink
@@ -116,7 +114,8 @@ uploadAll session manager uploadLink token = void . mapM upload
 uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO ()
 uploadFileMultipart session manager uploadLink token file = do
     req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
-    multipartReq <- formDataBody [partBS "subject" (UTF8.fromString $ takeBaseName file),
+    let subject = UTF8.fromString . DP.localToRemoteName . takeBaseName $ file
+    multipartReq <- formDataBody [partBS "subject" subject,
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
     _ <- http multipartReq manager
@@ -124,7 +123,7 @@ uploadFileMultipart session manager uploadLink token file = do
     --responseBody res $$+- sinkFile "temp.txt"
     return ()
 
-createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO ()
+createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO DP.Folder
 createFolder session manager createLink csrf folderName = do
     let jsonBody = encode (DP.Folder folderName "FOLDER" [] Nothing)
     let body = RequestBodyLBS jsonBody
@@ -133,5 +132,13 @@ createFolder session manager createLink csrf folderName = do
            setSession session <$>
            setMethod "POST" <$>
            parseUrl (DP.uri createLink)
-    _ <- http req manager
-    return ()
+    httpLbs req manager >>= (decodeOrException . responseBody)
+
+deleteDocument :: Session -> Manager -> String -> DP.Document -> ResourceT IO ()
+deleteDocument session manager csrf document = do
+    deleteLink <- liftIO $ linkOrException "delete_document" (DP.documentLinks document)
+    req <- addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$>
+               setSession session <$>
+               setMethod "POST" <$>
+               parseUrl (DP.uri deleteLink)
+    void $ httpLbs req manager

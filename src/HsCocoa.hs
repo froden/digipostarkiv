@@ -1,10 +1,16 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module HsCocoa where
 
 import Foreign.C
 
-import Data.ByteString.Char8
+import Data.ByteString.Char8 (unpack)
 import Data.Either
 import Control.Exception
+import System.FilePath.Posix
+import Data.Time
+import System.Locale
+import Control.Applicative
 
 import qualified Oauth as O
 import Sync
@@ -29,19 +35,19 @@ hsAccessToken :: CString -> CString -> IO CInt
 hsAccessToken s c = do
 	state <- peekCString s
 	code <- peekCString c
-	result <- try $ O.accessToken (O.State state) (O.AuthCode code)
+	result <- tryAny $ O.accessToken (O.State state) (O.AuthCode code)
 	case result of
 		Right token -> O.storeAccessToken token >> return 0
 		Left NotAuthenticated -> return 1
-		Left _ -> return 99
+		Left e -> printError e >> return 99
 
 hsSync :: IO CInt
 hsSync = do
-	result <- try sync
-	case result of
+	res <- tryAny sync
+	case res of
 		Right _ -> return 0
 		Left NotAuthenticated -> return 1
-		Left (HttpFailed e) -> print e >> return 99
+		Left e -> printError e >> return 99
 
 hsLogout :: IO ()
 hsLogout = O.removeAccessToken
@@ -54,3 +60,21 @@ hsLocalChanges = checkLocalChange
 
 hsRemoteChanges :: IO Bool
 hsRemoteChanges = checkRemoteChange
+
+tryAny :: IO a -> IO (Either SyncError a)
+tryAny action = do
+	result <- try action
+	case result of
+		Right x -> return $ Right x
+		Left e -> case fromException e of
+			Just (se :: SyncError) -> return $ Left se
+			Nothing -> return $ Left (Unhandled e)
+
+printError :: SyncError -> IO ()
+printError e = do
+	let dateFormat = iso8601DateFormat (Just "%H:%M:%S")
+	timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime
+	let msg = timestamp ++ " " ++ show e
+	print msg
+	logFile <- fmap (`combine` ".synclog") getUserSyncDir
+	appendFile logFile $ msg ++ "\n"
