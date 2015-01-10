@@ -142,3 +142,12 @@ deleteDocument session manager csrf document = do
                setMethod "DELETE" <$>
                parseUrl (DP.uri deleteLink)
     void $ httpLbs req manager
+
+deleteFolder :: Session -> Manager -> String -> DP.Folder -> ResourceT IO ()
+deleteFolder session manager csrf folder = do
+    deleteLink <- liftIO $ linkOrException "delete_folder" (DP.folderLinks folder)
+    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] <$>
+               setSession session <$>
+               setMethod "DELETE" <$>
+               parseUrl (DP.uri deleteLink)
+    void $ httpLbs req manager

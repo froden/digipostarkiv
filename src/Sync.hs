@@ -123,10 +123,10 @@ deleteRemote = ftTraverse deleteRemote'
     where
         deleteRemote' :: FTZipper -> ApiAction FTZipper
         deleteRemote' z@(File _ (Just remoteDoc), _) = deleteDoc remoteDoc >> return z
-        deleteRemote' z@(File _ Nothing, _) = error "No Digipost Document attached to local File. Cannot delete remote."
-        deleteRemote' z@(Dir name contents folder, ctx) = return z
-        --TODO: delete folders
-        --TODO: delete empty folder
+        deleteRemote' (File _ Nothing, _) = error "No Digipost Document attached to local File. Cannot delete remote."
+        deleteRemote' z@(Dir _ [] (Just remoteFolder), _) = Sync.deleteFolder remoteFolder >> return z
+        deleteRemote' (Dir _ [] Nothing, _) = error "No Digipost Folder attached to local Dir. Cannot delete remote."
+        deleteRemote' z@(Dir {}, _) = return z
         --TODO: delete if empty after docs is deleted
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
@@ -166,6 +166,11 @@ deleteDoc :: DP.Document -> ApiAction ()
 deleteDoc document = do
     (manager, aToken, csrfToken, _) <- ask
     liftResourceT $ deleteDocument aToken manager csrfToken document
+
+deleteFolder :: DP.Folder -> ApiAction ()
+deleteFolder folder = do
+    (manager, aToken, csrfToken, _) <- ask
+    liftResourceT $ Api.deleteFolder aToken manager csrfToken folder
 
 handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
 handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
