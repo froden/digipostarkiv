@@ -23,7 +23,7 @@ foreign export ccall hsSync :: IO CInt
 foreign export ccall hsLogout :: IO ()
 foreign export ccall hsLoggedIn :: IO Bool
 foreign export ccall hsLocalChanges :: IO Bool
-foreign export ccall hsRemoteChanges :: IO Bool
+foreign export ccall hsRemoteChanges :: IO CInt
 
 
 hsAuthUrl :: CString -> IO CString
@@ -58,8 +58,14 @@ hsLoggedIn = fmap isRight (try O.loadAccessToken :: IO (Either SyncError Http.Ac
 hsLocalChanges :: IO Bool
 hsLocalChanges = checkLocalChange
 
-hsRemoteChanges :: IO Bool
-hsRemoteChanges = checkRemoteChange
+hsRemoteChanges :: IO CInt
+hsRemoteChanges = do
+          res <- tryAny checkRemoteChange
+          case res of
+                  Right True -> return 0
+                  Right False -> return (-1)
+                  Left NotAuthenticated -> return 1
+                  Left e -> printError e >> return 99
 
 tryAny :: IO a -> IO (Either SyncError a)
 tryAny action = do

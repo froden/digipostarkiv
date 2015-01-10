@@ -153,15 +153,22 @@
     }
     syncInProgress = true;
     BOOL checkRemote = runNumber++ % 6 == 0;
-    BOOL remoteSync = checkRemote && hsRemoteChanges();
-    if (remoteSync) {
+    int remoteSync = -1;
+    if (checkRemote) {
+        remoteSync = hsRemoteChanges();
+    }
+    if (remoteSync == 0) {
         NSLog(@"remote change detected");
+    } else if (remoteSync == 1) {
+        [self performSelectorOnMainThread:@selector(login:) withObject:false waitUntilDone:false];
+    } else if (remoteSync == 99) {
+        NSLog(@"Unhandled syncresult from hsRemoteChange");
     }
     BOOL localSync = !checkRemote && hsLocalChanges();
     if (localSync) {
         NSLog(@"local change detected");
     }
-    if (localSync || remoteSync) {
+    if (localSync || remoteSync == 0) {
         [self fullSync];
     }
     syncInProgress = false;
