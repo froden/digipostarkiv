@@ -71,22 +71,22 @@ diff = foldl (flip deleteFrom)
       Just ft -> ft : deleteFrom x ys
 
 combineWith :: FileTree -> FileTree -> FileTree
-combineWith ft1 ft2 = fromMaybe ft1 (comb ft1 ft2)
+combineWith ft1 ft2 = head $ combineMany [ft1] [ft2]
 
-comb :: FileTree -> FileTree -> Maybe FileTree
-comb (Dir name1 contents1 folder1) (Dir name2 contents2 folder2)
+combineIfMatch :: FileTree -> FileTree -> Maybe FileTree
+combineIfMatch (Dir name1 contents1 folder1) (Dir name2 contents2 folder2)
     | name1 == name2 =
-        let newContents = contents1 `combineWith'` contents2
+        let newContents = contents1 `combineMany` contents2
         in Just $ Dir name1 newContents (folder1 `orElse` folder2)
-comb (File name1 doc1) (File name2 doc2)
+combineIfMatch (File name1 doc1) (File name2 doc2)
     | name1 == name2 = Just $ File name1 (doc1 `orElse` doc2)
-comb _ _ = Nothing
+combineIfMatch _ _ = Nothing
 
-combineWith' :: [FileTree] -> [FileTree] -> [FileTree]
-combineWith' fts1 fts2 = fmap (combineJe fts2) fts1
+combineMany :: [FileTree] -> [FileTree] -> [FileTree]
+combineMany fts1 fts2 = fmap (combineJe fts2) fts1
     where
         combineJe [] x = x
-        combineJe (y:ys) x = fromMaybe (combineJe ys x) (comb x y)
+        combineJe (y:ys) x = fromMaybe (combineJe ys x) (combineIfMatch x y)
 
 orElse :: Maybe a -> Maybe a -> Maybe a
 orElse mx my = case mx of

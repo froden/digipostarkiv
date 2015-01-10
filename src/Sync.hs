@@ -233,7 +233,7 @@ sync' token = do
         maybe (return ()) (download syncDir . ftZipper) toDownload
         maybe (return ()) (upload syncDir . ftZipper) toUpload
         liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDeleteLocal
---         maybe (return ()) (deleteRemote . ftZipper) toDeleteRemote
+        maybe (return ()) (deleteRemote . ftZipper) toDeleteRemote
       liftIO $ getLocalState syncDir >>= writeSyncState syncFile
 
 getUserSyncDir :: IO FilePath

@@ -137,8 +137,8 @@ createFolder session manager createLink csrf folderName = do
 deleteDocument :: Session -> Manager -> String -> DP.Document -> ResourceT IO ()
 deleteDocument session manager csrf document = do
     deleteLink <- liftIO $ linkOrException "delete_document" (DP.documentLinks document)
-    req <- addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$>
+    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] <$>
                setSession session <$>
-               setMethod "POST" <$>
+               setMethod "DELETE" <$>
                parseUrl (DP.uri deleteLink)
     void $ httpLbs req manager
