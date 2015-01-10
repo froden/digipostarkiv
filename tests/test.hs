@@ -5,6 +5,7 @@ import Control.Applicative
 
 import Sync
 import File
+import ApiTypes
 
 main :: IO ()
 main = defaultMain tests
@@ -106,6 +107,34 @@ unitTests = testGroup "Unit tests"
       in case newLocal local previous remote of
           Nothing -> assertFailure "Expected diff"
           Just f -> assertEqual "" (Dir "Digipostarkiv" [Dir "dirA" [File "fileB" Nothing] Nothing, Dir "dirB" [] Nothing] Nothing) f
+
+  , testCase "CombineWith remote file" $
+        let
+          local = Dir "Digipostarkiv" [File "fileA" Nothing] Nothing
+          remote = Dir "Digipostarkiv" [File "fileA" (Just $ Document "Hei" "UPLOADED" "txt" [])] Nothing
+        in assertEqual "" remote (local `combineWith`remote)
+
+  , testCase "CombineWith remote folder" $
+          let
+            local = Dir "Digipostarkiv" [Dir "dirA" [] Nothing] Nothing
+            remote = Dir "Digipostarkiv" [Dir "dirA" [] (Just $ Folder "Hei" "" [] Nothing) ] Nothing
+          in assertEqual "" remote (local `combineWith`remote)
+
+  , testCase "CombineWith remote tree" $
+            let
+              local = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+              remote = Dir "Digipostarkiv" [Dir "dirB" [File "fileB" Nothing] Nothing, Dir "dirA" [File "fileA" (Just $ Document "Hei" "UPLOADED" "txt" [])] (Just $ Folder "folderA" "" [] Nothing)] Nothing
+              result = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" (Just $ Document "Hei" "UPLOADED" "txt" [])] (Just $ Folder "folderA" "" [] Nothing)] Nothing
+            in assertEqual "" result (local `combineWith`remote)
+
+  , testCase "detect locally deleted files" $
+              let
+                previous = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" Nothing] Nothing] Nothing
+                local = Dir "Digipostarkiv" [Dir "dirA" [] Nothing] Nothing
+                remote = Dir "Digipostarkiv" [Dir "dirA" [File "fileA" (Just $ Document "Hei" "UPLOADED" "txt" [])] (Just $ Folder "Hei" "" [] Nothing) ] Nothing
+              in case (`combineWith` remote) <$> deletedLocal previous local of
+                  Nothing -> assertFailure "Expected Just"
+                  Just f -> assertEqual "" remote f
   ]
 
 emptyTree :: FileTree

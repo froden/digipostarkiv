@@ -337,7 +337,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.2;
+				GHC_VERSION = 7.8.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -363,7 +363,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.2;
+				GHC_VERSION = 7.8.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

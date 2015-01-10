@@ -7,6 +7,7 @@ import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
+import Control.Applicative
 import System.FilePath.Posix
 import Data.List
 import Data.Maybe
@@ -70,9 +71,6 @@ getRemoteState = do
       where
         docToFile doc = File (DP.filename doc) (Just doc)
 
---for now does not consider locally deleted files to ensure
---we dont acidentally delete all files on server
---files deleted locally will be restored from server
 newOnServer :: FileTree -> FileTree -> FileTree -> Maybe FileTree
 newOnServer local previous remote = newFiles remote previous local
 
@@ -124,9 +122,12 @@ deleteRemote :: FTZipper -> ApiAction ()
 deleteRemote = ftTraverse deleteRemote'
     where
         deleteRemote' :: FTZipper -> ApiAction FTZipper
-        deleteRemote' z@(File _ (Just remoteDoc), _:_) = deleteDoc remoteDoc >> return z
-        deleteRemote' (Dir name contents folder, ctx) = do
-
+        deleteRemote' z@(File _ (Just remoteDoc), _) = deleteDoc remoteDoc >> return z
+        deleteRemote' z@(File _ Nothing, _) = error "No Digipost Document attached to local File. Cannot delete remote."
+        deleteRemote' z@(Dir name contents folder, ctx) = return z
+        --TODO: delete folders
+        --TODO: delete empty folder
+        --TODO: delete if empty after docs is deleted
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverse deleteLocal'
@@ -136,7 +137,7 @@ deleteLocal syncDir = ftTraverse deleteLocal'
     deleteLocal' z@(Dir name [] _, _) = do
       unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
       return z
-    deleteLocal' z@(Dir{}, _) = return z
+    deleteLocal' z@(Dir{}, _) = return z -- TODO: try deleteIfEmpty
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists
@@ -227,11 +228,12 @@ sync' token = do
         liftIO $ debugLog $ "up " ++ show toUpload
         let toDeleteLocal = deletedOnServer previousState remoteState
         liftIO $ debugLog $ "delLocal " ++ show toDeleteLocal
-        let toDeleteRemote = deletedLocal previousState localState
+        let toDeleteRemote = (`combineWith` remoteState) <$> deletedLocal previousState localState
         liftIO $ debugLog $ "delRemote " ++ show toDeleteRemote
         maybe (return ()) (download syncDir . ftZipper) toDownload
         maybe (return ()) (upload syncDir . ftZipper) toUpload
         liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDeleteLocal
+--         maybe (return ()) (deleteRemote . ftZipper) toDeleteRemote
       liftIO $ getLocalState syncDir >>= writeSyncState syncFile
 
 getUserSyncDir :: IO FilePath
