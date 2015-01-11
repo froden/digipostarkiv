@@ -40,10 +40,15 @@ readSyncState syncFile = do
 writeSyncState :: FilePath -> FileTree -> IO ()
 writeSyncState syncFile state = writeFile syncFile (show state)
 
+getDirContents :: FilePath -> IO [FilePath]
+getDirContents dirPath = do
+        names <- getDirectoryContents dirPath
+        return $ filter (not . specialFiles) names
+    where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
+
 getLocalState :: FilePath -> IO FileTree
 getLocalState dirPath = do
-        names <- getDirectoryContents dirPath
-        let properNames = filter (not . specialFiles) names
+        properNames <- getDirContents dirPath
         content <- forM properNames $ \name -> do
             let subPath = dirPath </> name
             isDirectory <- doesDirectoryExist subPath
@@ -51,7 +56,6 @@ getLocalState dirPath = do
                 then getLocalState subPath
                 else return (File name Nothing)
         return $ Dir (takeFileName dirPath) content Nothing
-    where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getRemoteState :: ApiAction FileTree
 getRemoteState = do
@@ -130,14 +134,24 @@ deleteRemote = ftTraverse deleteRemote'
         --TODO: delete if empty after docs is deleted
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
-deleteLocal syncDir = ftTraverse deleteLocal'
-  where
+deleteLocal syncDir = ftTraverseDirLast deleteLocal'
+  where --TODO: cleanup?
     deleteLocal' :: FTZipper -> IO FTZipper
     deleteLocal' z@(File{}, _) = removeIfExists (fullPath syncDir z) >> return z
     deleteLocal' z@(Dir name [] _, _) = do
-      unless (name == syncDirName) $ removeDirectoryRecursive (fullPath syncDir z)
-      return z
-    deleteLocal' z@(Dir{}, _) = return z -- TODO: try deleteIfEmpty
+        let dirPath = fullPath syncDir z
+        isDirectory <- doesDirectoryExist dirPath
+        unless (name == syncDirName || not isDirectory) $ removeDirectoryRecursive dirPath
+        return z
+    deleteLocal' z@(Dir name _ _, _) = do
+        let dirPath = fullPath syncDir z
+        isDirectory <- doesDirectoryExist dirPath
+        unless (not isDirectory) $ do
+            dircont <- getDirContents dirPath
+            print dircont
+            let nonEmptyDir = (not . null) dircont
+            unless (name == syncDirName || nonEmptyDir) $ removeDirectoryRecursive dirPath
+        return z
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists

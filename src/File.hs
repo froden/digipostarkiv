@@ -50,6 +50,15 @@ ftTraverse action z@(Dir{}, _) = do
   maybe (return ()) (ftTraverse action) (ftDown nz)
   maybe (return ()) (ftTraverse action) (ftRight nz)
 
+ftTraverseDirLast :: Monad m => (FTZipper -> m FTZipper) -> FTZipper -> m ()
+ftTraverseDirLast action z@(File{}, _) = do
+  nz <- action z
+  maybe (return ()) (ftTraverseDirLast action) (ftRight nz)
+ftTraverseDirLast action z@(Dir{}, _) = do
+  maybe (return ()) (ftTraverseDirLast action) (ftDown z)
+  maybe (return ()) (ftTraverseDirLast action) (ftRight z)
+  action z >> return ()
+
 treeDiff :: FileTree -> FileTree -> Maybe FileTree
 treeDiff ft1@(Dir name1 contents1 folder1) ft2@(Dir name2 contents2 folder2)
     | ft1 == ft2 = Nothing
