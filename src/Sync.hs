@@ -148,7 +148,6 @@ deleteLocal syncDir = ftTraverseDirLast deleteLocal'
         isDirectory <- doesDirectoryExist dirPath
         unless (not isDirectory) $ do
             dircont <- getDirContents dirPath
-            print dircont
             let nonEmptyDir = (not . null) dircont
             unless (name == syncDirName || nonEmptyDir) $ removeDirectoryRecursive dirPath
         return z
