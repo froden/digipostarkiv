@@ -135,14 +135,9 @@ deleteRemote = ftTraverse deleteRemote'
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverseDirLast deleteLocal'
-  where --TODO: cleanup?
+  where
     deleteLocal' :: FTZipper -> IO FTZipper
     deleteLocal' z@(File{}, _) = removeIfExists (fullPath syncDir z) >> return z
-    deleteLocal' z@(Dir name [] _, _) = do
-        let dirPath = fullPath syncDir z
-        isDirectory <- doesDirectoryExist dirPath
-        unless (name == syncDirName || not isDirectory) $ removeDirectoryRecursive dirPath
-        return z
     deleteLocal' z@(Dir name _ _, _) = do
         let dirPath = fullPath syncDir z
         isDirectory <- doesDirectoryExist dirPath
