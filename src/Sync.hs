@@ -26,18 +26,26 @@ import File
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
 
+data SyncState = SyncState FileTree FileTree deriving (Show, Read)
+
+localSyncState :: SyncState -> FileTree
+localSyncState (SyncState local _) = local
+
+remoteSyncState :: SyncState -> FileTree
+remoteSyncState (SyncState _ remote) = remote
+
 syncDirName :: String
 syncDirName = "Digipostarkiv"
 
-readSyncState :: FilePath -> IO FileTree
+readSyncState :: FilePath -> IO SyncState
 readSyncState syncFile = do
         r <- try (readFile syncFile) :: IO (Either IOException String)
         case r of
-            Right content -> return $ fromMaybe emptyDir (readMaybe content)
-            Left _ -> return emptyDir
-    where emptyDir = Dir syncDirName [] Nothing
+            Right content -> return $ fromMaybe emptyState (readMaybe content)
+            Left _ -> return emptyState
+    where emptyState = SyncState (Dir syncDirName [] Nothing) (Dir syncDirName [] Nothing)
 
-writeSyncState :: FilePath -> FileTree -> IO ()
+writeSyncState :: FilePath -> SyncState -> IO ()
 writeSyncState syncFile state = writeFile syncFile (show state)
 
 getDirContents :: FilePath -> IO [FilePath]
@@ -194,7 +202,7 @@ handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
         handleException e = throwIO $ HttpFailed e
 
 
-initLocalState :: IO (FilePath, FilePath, FileTree, FileTree)
+initLocalState :: IO (FilePath, FilePath, SyncState, FileTree)
 initLocalState = do
     syncDir <- getOrCreateSyncDir
     let syncFile = getSyncFile syncDir
@@ -205,8 +213,8 @@ initLocalState = do
 checkLocalChange :: IO Bool
 checkLocalChange = do
     (_, _, previousState, localState) <- initLocalState
-    let added = localState `treeDiff` previousState
-    let deleted = previousState `treeDiff` localState
+    let added = localState `treeDiff` localSyncState previousState
+    let deleted = localSyncState previousState `treeDiff` localState
     return $ isJust added || isJust deleted
 
 checkRemoteChange :: IO Bool
@@ -219,8 +227,8 @@ checkRemoteChange' token = do
       manager <- liftIO $ newManager conduitManagerSettings
       (root, _, mbox) <- getAccount manager token
       remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
-      let added = remoteState `treeDiff` previousState
-      let deleted = previousState `treeDiff` remoteState
+      let added = remoteState `treeDiff` remoteSyncState previousState
+      let deleted = remoteSyncState previousState `treeDiff` remoteState
       return $ isJust added || isJust deleted
 
 sync :: IO ()
@@ -235,19 +243,21 @@ sync' token = do
       (root, _, mbox) <- getAccount manager token
       flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
         remoteState <- getRemoteState
-        let toDownload = newOnServer localState previousState remoteState
+        let toDownload = newOnServer localState (localSyncState previousState) remoteState
         liftIO $ debugLog $ "down " ++ show toDownload
-        let toUpload = newLocal localState previousState remoteState
+        let toUpload = newLocal localState (remoteSyncState previousState) remoteState
         liftIO $ debugLog $ "up " ++ show toUpload
-        let toDeleteLocal = deletedOnServer previousState remoteState
+        let toDeleteLocal = deletedOnServer (remoteSyncState previousState) remoteState
         liftIO $ debugLog $ "delLocal " ++ show toDeleteLocal
-        let toDeleteRemote = (`combineWith` remoteState) <$> deletedLocal previousState localState
+        let toDeleteRemote = (`combineWith` remoteState) <$> deletedLocal (localSyncState previousState) localState
         liftIO $ debugLog $ "delRemote " ++ show toDeleteRemote
         maybe (return ()) (download syncDir . ftZipper) toDownload
         maybe (return ()) (upload syncDir . ftZipper) toUpload
         liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDeleteLocal
         maybe (return ()) (deleteRemote . ftZipper) toDeleteRemote
-      liftIO $ getLocalState syncDir >>= writeSyncState syncFile
+        newLocalState <- liftIO $ getLocalState syncDir
+        newRemoteState <- getRemoteState
+        liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
 
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do
