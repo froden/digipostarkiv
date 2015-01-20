@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 #import "HsCocoa_stub.h"
+#import "Digipostarkiv-Swift.h"
 
 @implementation AppDelegate
 
@@ -19,45 +20,13 @@
     syncInProgress = false;
     runNumber = 0L;
     
-    statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    [statusItem setMenu:_statusMenu];
-    statusImage = [NSImage imageNamed:@"digipost-black.png"];
-    [statusImage setSize:NSMakeSize(15.2, 20.0)];
-    statusImageActive = [NSImage imageNamed:@"digipost-red.png"];
-    [statusImageActive setSize:NSMakeSize(15.2, 20.0)];
-    NSImage *altStatusImage = [NSImage imageNamed:@"digipost-white.png"];
-    [altStatusImage setSize:NSMakeSize(15.2, 20.0)];
-    [statusItem setImage:statusImage];
-    [statusItem setAlternateImage:altStatusImage];
-    [statusItem setHighlightMode:YES];
-    
     [self startSyncTimer];
 }
 
-- (IBAction)exitApp:(id)sender {
-    hs_exit();
-    [NSApp terminate:self];
-}
-
-- (IBAction)login:(id)sender {
-    char *cAuthUrl = hsAuthUrl("state");
-    NSString *authUrl = [NSString stringWithFormat:@"%s" , cAuthUrl];
-    NSURL *url = [NSURL URLWithString:authUrl];
-    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
-    [NSApp activateIgnoringOtherApps:YES];
-    [self.window makeKeyAndOrderFront:self];
-    [[self.webView mainFrame] loadRequest:urlRequest];
-}
 
 - (IBAction)logout:(id)sender {
     [self stopSyncTimer];
     hsLogout();
-}
-
-- (IBAction)openArchiveFolder:(id)sender {
-    NSString *folderPath = [NSHomeDirectory() stringByAppendingString:@"/Digipostarkiv"];
-    NSURL *folderURL = [NSURL fileURLWithPath: folderPath];
-    [[NSWorkspace sharedWorkspace] openURL: folderURL];
 }
 
 

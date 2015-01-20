@@ -1,25 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6254" systemVersion="14B25" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
-        <plugIn identifier="com.apple.WebKitIBPlugin" version="6250"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6254"/>
+        <plugIn identifier="com.apple.WebKitIBPlugin" version="6254"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
             <connections>
-                <outlet property="delegate" destination="Voe-Tx-rLC" id="GzC-gU-4Uq"/>
+                <outlet property="delegate" destination="CDq-Sp-PiZ" id="0x7-E3-07m"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="Voe-Tx-rLC" customClass="AppDelegate">
+        <customObject id="MAs-NZ-OSB" customClass="LoginWindowController" customModule="Digipostarkiv" customModuleProvider="target">
             <connections>
-                <outlet property="statusMenu" destination="vvB-te-Phl" id="3ed-Co-G0e"/>
-                <outlet property="webView" destination="HcF-40-ePl" id="Imu-Ec-fVK"/>
-                <outlet property="window" destination="e29-41-klv" id="KfU-tv-Tw6"/>
+                <outlet property="loginView" destination="yZl-3p-s0N" id="SC2-9A-Yqr"/>
+                <outlet property="loginWindow" destination="pF2-6o-Pjd" id="pEy-uY-Kt6"/>
             </connections>
         </customObject>
+        <customObject id="Voe-Tx-rLC" customClass="MenuController" customModule="Digipostarkiv" customModuleProvider="target">
+            <connections>
+                <outlet property="loginWindowController" destination="MAs-NZ-OSB" id="ESm-WC-tWm"/>
+                <outlet property="statusMenu" destination="vvB-te-Phl" id="Kqu-gO-qK3"/>
+            </connections>
+        </customObject>
+        <customObject id="CDq-Sp-PiZ" customClass="AppDelegate"/>
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
@@ -675,46 +680,46 @@
                 <menuItem title="Åpne Digipostarkiv i Finder" id="inx-IO-CRF">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="openArchiveFolder:" target="Voe-Tx-rLC" id="Geo-FK-4aW"/>
+                        <action selector="openInFinder:" target="Voe-Tx-rLC" id="2xL-53-Yew"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Synkroniser nå" id="HT6-xw-0TF">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="manualSync:" target="Voe-Tx-rLC" id="3CO-RM-G5D"/>
+                        <action selector="manualSync:" target="Voe-Tx-rLC" id="Ldf-qj-F1g"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Logg inn" id="Ceh-0h-cdn">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="login:" target="Voe-Tx-rLC" id="hAx-0x-Pmb"/>
+                        <action selector="logIn:" target="Voe-Tx-rLC" id="z3J-do-OZU"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Logg ut" id="CzG-yS-Q7s">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="logout:" target="Voe-Tx-rLC" id="DcZ-1u-ogq"/>
+                        <action selector="logOut:" target="Voe-Tx-rLC" id="Y6I-xy-DFW"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Avslutt" id="AcJ-EO-Ofc">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="exitApp:" target="Voe-Tx-rLC" id="fqM-IU-wJl"/>
+                        <action selector="exitApp:" target="Voe-Tx-rLC" id="8pt-7m-HKo"/>
                     </connections>
                 </menuItem>
             </items>
-            <point key="canvasLocation" x="243.5" y="-988.5"/>
+            <point key="canvasLocation" x="228.5" y="-935.5"/>
         </menu>
-        <window title="Logg inn med Digipost" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="e29-41-klv">
+        <window title="Logg inn med Digipost" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="pF2-6o-Pjd">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="456" y="77" width="800" height="800"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
-            <view key="contentView" id="6y3-hc-r97">
+            <view key="contentView" id="UBU-PQ-1OJ">
                 <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
-                <autoresizingMask key="autoresizingMask"/>
+                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
-                    <webView fixedFrame="YES" maintainsBackForwardList="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HcF-40-ePl">
+                    <webView fixedFrame="YES" maintainsBackForwardList="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yZl-3p-s0N">
                         <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                         <webPreferences key="preferences" defaultFontSize="12" defaultFixedFontSize="12" plugInsEnabled="NO" javaEnabled="NO">
                             <nil key="identifier"/>
@@ -722,6 +727,7 @@
                     </webView>
                 </subviews>
             </view>
+            <point key="canvasLocation" x="431" y="426"/>
         </window>
     </objects>
 </document>

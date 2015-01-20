@@ -8,12 +8,15 @@
 
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
+#import "Digipostarkiv-Swift.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     NSStatusItem *statusItem;
     NSImage *statusImage;
     NSImage *statusImageActive;
     NSTimer *syncTimer;
+    
+    MenuController *menuController;
     
     BOOL syncInProgress;
     long runNumber;
@@ -22,12 +25,6 @@
 @property (assign) IBOutlet NSWindow *window;
 @property (assign) IBOutlet NSMenu *statusMenu;
 @property (assign) IBOutlet WebView *webView;
-
-- (IBAction)exitApp:(id)sender;
-
-- (IBAction)login:(id)sender;
-
-- (IBAction)openArchiveFolder:(id)sender;
 
 - (IBAction)manualSync:(id)sender;
 
