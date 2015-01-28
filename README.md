@@ -19,7 +19,6 @@ Simple work in progress file sync client for files uploaded to Digipost
 * Suports Digipost folders
 * Will only sync documents marked as origin="uploaded"
 * Uses .sync and a three way diff to detect deleted files
-* Files can only be deleted from Digipost (to prevent accidentally deleting all files in archive)
 * Checks for local changes every 10 seconds, server every minute.
 
 ### TODO
