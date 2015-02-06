@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6254" systemVersion="14B25" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6254" systemVersion="14C109" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6254"/>
         <plugIn identifier="com.apple.WebKitIBPlugin" version="6254"/>
@@ -20,11 +20,17 @@
         </customObject>
         <customObject id="Voe-Tx-rLC" customClass="MenuController" customModule="Digipostarkiv" customModuleProvider="target">
             <connections>
+                <outlet property="appDelegate" destination="CDq-Sp-PiZ" id="3fs-XS-cTy"/>
                 <outlet property="loginWindowController" destination="MAs-NZ-OSB" id="ESm-WC-tWm"/>
                 <outlet property="statusMenu" destination="vvB-te-Phl" id="Kqu-gO-qK3"/>
             </connections>
         </customObject>
-        <customObject id="CDq-Sp-PiZ" customClass="AppDelegate"/>
+        <customObject id="CDq-Sp-PiZ" customClass="DigipostarkivAppDelegate" customModule="Digipostarkiv" customModuleProvider="target">
+            <connections>
+                <outlet property="loginWindowController" destination="MAs-NZ-OSB" id="A6F-Ja-Vmb"/>
+                <outlet property="menuController" destination="Voe-Tx-rLC" id="FsD-0t-0t8"/>
+            </connections>
+        </customObject>
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
@@ -714,7 +720,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="456" y="77" width="800" height="800"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1177"/>
             <view key="contentView" id="UBU-PQ-1OJ">
                 <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

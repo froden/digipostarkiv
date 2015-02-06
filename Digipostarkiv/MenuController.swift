@@ -12,17 +12,21 @@ import Cocoa
 class MenuController: NSObject {
     
     @IBOutlet weak var statusMenu: NSMenu!
-    var statusItem: NSStatusItem?
+    var statusItem: NSStatusItem!
+    var statusImage: NSImage!
+    var statusImageActive: NSImage!
+    
     
     @IBOutlet weak var loginWindowController: LoginWindowController!
+    @IBOutlet weak var appDelegate: DigipostarkivAppDelegate!
     
     override func awakeFromNib() {
         statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(20.0)
         statusItem!.menu = statusMenu
         let statusImageSize = NSSize(width: 15.2, height: 20.0)
-        let statusImage = NSImage(named: "digipost-black.png")
+        statusImage = NSImage(named: "digipost-black.png")
         statusImage?.size = statusImageSize
-        let statusImageActive = NSImage(named: "digipost-red.png")
+        statusImageActive = NSImage(named: "digipost-red.png")
         statusImageActive?.size = statusImageSize
         let altStatusImage = NSImage(named: "digipost-white.png")
         altStatusImage?.size = statusImageSize
@@ -42,13 +46,43 @@ class MenuController: NSObject {
     }
     
     @IBAction func manualSync(sender: NSMenu) {
+        if (Sync.isLoggedIn()) {
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+                self.appDelegate.fullSync()
+            })
+        } else {
+            appDelegate.stopSyncTimer()
+            loginWindowController.showOauthLoginPage()
+        }
     }
     
     @IBAction func logIn(sender: NSMenu) {
-        loginWindowController.login()
+        loginWindowController.showOauthLoginPage()
     }
     
     @IBAction func logOut(sender: NSMenu) {
-        loginWindowController.logout()
+        appDelegate.stopSyncTimer()
+        Sync.logout()
+    }
+    
+    override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
+        let loggedIn = Sync.isLoggedIn()
+        if (menuItem.action == "logIn:") {
+            menuItem.hidden = loggedIn
+            return !loggedIn
+        } else if (menuItem.action == "logOut:") {
+            menuItem.hidden = !loggedIn
+            return loggedIn
+        } else {
+            return true
+        }
+    }
+    
+    func showActiveIcon() {
+        statusItem?.image = statusImageActive
+    }
+    
+    func showStandardIcon() {
+        statusItem?.image = statusImage
     }
 }

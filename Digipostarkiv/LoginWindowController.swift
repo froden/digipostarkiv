@@ -15,7 +15,7 @@ class LoginWindowController: NSWindowController {
     @IBOutlet weak var loginWindow: NSWindow!
     @IBOutlet weak var loginView: WebView!
     
-    func login() {
+    func showOauthLoginPage() {
         let oauthUrlString = Sync.oauthUrl("state")
         let oauthUrl = NSURL(string: oauthUrlString)
         let request = oauthUrl.map {u in NSURLRequest(URL: u)}
@@ -28,9 +28,8 @@ class LoginWindowController: NSWindowController {
         }
     }
     
-    func logout() {
-        //TODO: stop syncTimer
-        Sync.logout()
+    func closeOauthLoginPage() {
+        loginWindow.close()
+        loginView.mainFrameURL = "about:blank"
     }
-    
 }

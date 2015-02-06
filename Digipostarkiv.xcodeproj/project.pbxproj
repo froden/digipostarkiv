@@ -10,15 +10,16 @@
 		DE0139841941C5A60081B26E /* digipost-black.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139811941C5A60081B26E /* digipost-black.png */; };
 		DE0139851941C5A60081B26E /* digipost-red.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139821941C5A60081B26E /* digipost-red.png */; };
 		DE0139861941C5A60081B26E /* digipost-white.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139831941C5A60081B26E /* digipost-white.png */; };
-               DE7667DE1A6CD7F100F67D9A /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667DD1A6CD7F100F67D9A /* MenuController.swift */; };
-               DE7667E41A6D9A4400F67D9A /* LoginWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */; };
-               DE76683A1A6E525000F67D9A /* Sync.m in Sources */ = {isa = PBXBuildFile; fileRef = DE7668391A6E525000F67D9A /* Sync.m */; };
+		DE0986FB1A82685C0073C85E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0986FA1A82685C0073C85E /* Extensions.swift */; };
+		DE4BC4321A7FD13800FD0185 /* DigipostarkivAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4BC4311A7FD13800FD0185 /* DigipostarkivAppDelegate.swift */; };
+		DE7667DE1A6CD7F100F67D9A /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667DD1A6CD7F100F67D9A /* MenuController.swift */; };
+		DE7667E41A6D9A4400F67D9A /* LoginWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */; };
+		DE76683A1A6E525000F67D9A /* Sync.m in Sources */ = {isa = PBXBuildFile; fileRef = DE7668391A6E525000F67D9A /* Sync.m */; };
 		DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */; };
 		DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */; };
 		DEB1EF651906F23A008C83D2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF631906F23A008C83D2 /* InfoPlist.strings */; };
 		DEB1EF671906F23A008C83D2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF661906F23A008C83D2 /* main.m */; };
 		DEB1EF6B1906F23A008C83D2 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF691906F23A008C83D2 /* Credits.rtf */; };
-		DEB1EF6E1906F23A008C83D2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */; };
 		DEB1EF711906F23A008C83D2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */; };
 		DEB1EF731906F23A008C83D2 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DEB1EF721906F23A008C83D2 /* Images.xcassets */; };
 		DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DEE5DCD31909082700F7C9FD /* liba.a */; };
@@ -28,11 +29,13 @@
 		DE0139811941C5A60081B26E /* digipost-black.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-black.png"; sourceTree = "<group>"; };
 		DE0139821941C5A60081B26E /* digipost-red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-red.png"; sourceTree = "<group>"; };
 		DE0139831941C5A60081B26E /* digipost-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-white.png"; sourceTree = "<group>"; };
-               DE7667DC1A6CD7F000F67D9A /* Digipostarkiv-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Digipostarkiv-Bridging-Header.h"; sourceTree = "<group>"; };
-               DE7667DD1A6CD7F100F67D9A /* MenuController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
-               DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginWindowController.swift; sourceTree = "<group>"; };
-               DE7668391A6E525000F67D9A /* Sync.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sync.m; sourceTree = "<group>"; };
-               DE76683B1A6E529300F67D9A /* Sync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sync.h; sourceTree = "<group>"; };
+		DE0986FA1A82685C0073C85E /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		DE4BC4311A7FD13800FD0185 /* DigipostarkivAppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DigipostarkivAppDelegate.swift; sourceTree = "<group>"; };
+		DE7667DC1A6CD7F000F67D9A /* Digipostarkiv-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Digipostarkiv-Bridging-Header.h"; sourceTree = "<group>"; };
+		DE7667DD1A6CD7F100F67D9A /* MenuController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
+		DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginWindowController.swift; sourceTree = "<group>"; };
+		DE7668391A6E525000F67D9A /* Sync.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sync.m; sourceTree = "<group>"; };
+		DE76683B1A6E529300F67D9A /* Sync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sync.h; sourceTree = "<group>"; };
 		DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		DEB1EF571906F23A008C83D2 /* Digipostarkiv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Digipostarkiv.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -44,8 +47,6 @@
 		DEB1EF661906F23A008C83D2 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		DEB1EF681906F23A008C83D2 /* Digipostarkiv-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Digipostarkiv-Prefix.pch"; sourceTree = "<group>"; };
 		DEB1EF6A1906F23A008C83D2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
-		DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		DEB1EF701906F23A008C83D2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		DEB1EF721906F23A008C83D2 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		DEB1EF791906F23A008C83D2 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
@@ -112,19 +113,19 @@
 		DEB1EF601906F23A008C83D2 /* Digipostarkiv */ = {
 			isa = PBXGroup;
 			children = (
-				DEB1EF6C1906F23A008C83D2 /* AppDelegate.h */,
-				DEB1EF6D1906F23A008C83D2 /* AppDelegate.m */,
-                               DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */,
-                               DE7667DD1A6CD7F100F67D9A /* MenuController.swift */,
+				DE4BC4311A7FD13800FD0185 /* DigipostarkivAppDelegate.swift */,
+				DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */,
+				DE7667DD1A6CD7F100F67D9A /* MenuController.swift */,
 				DE0139811941C5A60081B26E /* digipost-black.png */,
 				DE0139821941C5A60081B26E /* digipost-red.png */,
 				DE0139831941C5A60081B26E /* digipost-white.png */,
 				DEB1EF6F1906F23A008C83D2 /* MainMenu.xib */,
 				DEB1EF721906F23A008C83D2 /* Images.xcassets */,
 				DEB1EF611906F23A008C83D2 /* Supporting Files */,
-                               DE7667DC1A6CD7F000F67D9A /* Digipostarkiv-Bridging-Header.h */,
-                               DE7668391A6E525000F67D9A /* Sync.m */,
-                               DE76683B1A6E529300F67D9A /* Sync.h */,
+				DE7667DC1A6CD7F000F67D9A /* Digipostarkiv-Bridging-Header.h */,
+				DE7668391A6E525000F67D9A /* Sync.m */,
+				DE76683B1A6E529300F67D9A /* Sync.h */,
+				DE0986FA1A82685C0073C85E /* Extensions.swift */,
 			);
 			path = Digipostarkiv;
 			sourceTree = "<group>";
@@ -229,11 +230,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-                               DE76683A1A6E525000F67D9A /* Sync.m in Sources */,
-				DEB1EF6E1906F23A008C83D2 /* AppDelegate.m in Sources */,
+				DE76683A1A6E525000F67D9A /* Sync.m in Sources */,
+				DE4BC4321A7FD13800FD0185 /* DigipostarkivAppDelegate.swift in Sources */,
+				DE0986FB1A82685C0073C85E /* Extensions.swift in Sources */,
 				DEB1EF671906F23A008C83D2 /* main.m in Sources */,
-                               DE7667DE1A6CD7F100F67D9A /* MenuController.swift in Sources */,
-                               DE7667E41A6D9A4400F67D9A /* LoginWindowController.swift in Sources */,
+				DE7667DE1A6CD7F100F67D9A /* MenuController.swift in Sources */,
+				DE7667E41A6D9A4400F67D9A /* LoginWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -350,26 +352,26 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-                               CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
 				GHC_VERSION = 7.8.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
-                               LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
 				);
-                               MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
 				);
 				PRODUCT_NAME = Digipostarkiv;
-                               SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
-                               SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;
@@ -381,25 +383,25 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-                               CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
 				GHC_VERSION = 7.8.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
-                               LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
 				);
-                               MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
 				);
 				PRODUCT_NAME = Digipostarkiv;
-                               SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;

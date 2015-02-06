@@ -15,6 +15,11 @@
 
 +(NSString*)oauthUrl: (NSString*)state;
 +(void)logout;
++(int)getAccessToken: (NSString*)state :(NSString*)authCode;
++(BOOL) isLoggedIn;
++(int)sync;
++(int)hasRemoteChange;
++(BOOL)hasLocalChange;
 
 @end
 

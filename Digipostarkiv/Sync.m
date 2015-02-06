@@ -21,4 +21,24 @@
     hsLogout();
 }
 
++(int)getAccessToken: (NSString*)state :(NSString*)authCode {
+    return hsAccessToken((void*)state.UTF8String, (void*)authCode.UTF8String);
+}
+
++(BOOL)isLoggedIn {
+    return hsLoggedIn();
+}
+
++(int)sync {
+    return hsSync();
+}
+
++(int)hasRemoteChange {
+    return hsRemoteChanges();
+}
+
++(BOOL)hasLocalChange {
+    return hsLocalChanges();
+}
+
 @end
