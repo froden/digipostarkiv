@@ -255,6 +255,8 @@ sync' token = do
         maybe (return ()) (upload syncDir . ftZipper) toUpload
         liftIO $ maybe (return ()) (deleteLocal syncDir . ftZipper) toDeleteLocal
         maybe (return ()) (deleteRemote . ftZipper) toDeleteRemote
+      (rootNew, _, mboxNew) <- getAccount manager token
+      flip runReaderT (manager, token, DP.csrfToken rootNew, mboxNew) $ do
         newLocalState <- liftIO $ getLocalState syncDir
         newRemoteState <- getRemoteState
         liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
