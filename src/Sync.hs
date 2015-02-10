@@ -135,11 +135,11 @@ deleteRemote = ftTraverse deleteRemote'
     where
         deleteRemote' :: FTZipper -> ApiAction FTZipper
         deleteRemote' z@(File _ (Just remoteDoc), _) = deleteDoc remoteDoc >> return z
-        deleteRemote' (File _ Nothing, _) = error "No Digipost Document attached to local File. Cannot delete remote."
+        deleteRemote' z@(File name Nothing, _) = liftIO $ debugLog ("No Digipost Document attached to local File. Cannot delete remote: " ++ name) >> return z
         deleteRemote' z@(Dir _ [] (Just remoteFolder), _) = Sync.deleteFolder remoteFolder >> return z
-        deleteRemote' (Dir _ [] Nothing, _) = error "No Digipost Folder attached to local Dir. Cannot delete remote."
+        deleteRemote' z@(Dir name [] Nothing, _) = liftIO $ debugLog ("No Digipost Folder attached to local Dir. Cannot delete remote: " ++ name) >> return z
         deleteRemote' z@(Dir {}, _) = return z
-        --TODO: delete if empty after docs is deleted
+        --TODO: delete if empty after docs are deleted
 
 deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverseDirLast deleteLocal'
