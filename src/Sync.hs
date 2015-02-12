@@ -141,6 +141,8 @@ deleteRemote = ftTraverse deleteRemote'
         deleteRemote' z@(Dir {}, _) = return z
         --TODO: delete if empty after docs are deleted
 
+--TODO: tomme kataloger fjernes selv om de ikke ble slettet fra server
+--TODO: Må finne en måte å ta hensyn til endringer som skjer mens man synker
 deleteLocal :: FilePath -> FTZipper -> IO ()
 deleteLocal syncDir = ftTraverseDirLast deleteLocal'
   where
@@ -222,14 +224,16 @@ checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
 
 checkRemoteChange' :: AccessToken -> IO Bool
 checkRemoteChange' token = do
-    (_, _, previousState, _) <- initLocalState
+    (_, _, previousState, localState) <- initLocalState
     runResourceT $ do
       manager <- liftIO $ newManager conduitManagerSettings
       (root, _, mbox) <- getAccount manager token
       remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
-      let added = remoteState `treeDiff` remoteSyncState previousState
-      let deleted = remoteSyncState previousState `treeDiff` remoteState
-      return $ isJust added || isJust deleted
+      let toDownload = newOnServer localState (localSyncState previousState) remoteState
+      let toUpload = newLocal localState (remoteSyncState previousState) remoteState
+      let toDeleteLocal = deletedOnServer (remoteSyncState previousState) remoteState
+      let toDeleteRemote = (`combineWith` remoteState) <$> deletedLocal (localSyncState previousState) localState
+      return $ isJust toDownload || isJust toUpload || isJust toDeleteLocal || isJust toDeleteRemote
 
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
