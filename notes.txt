@@ -1,0 +1,64 @@
+Lokal liste
+path, last modified
+//arkiv/fil1, 1234
+//nytt/fil1, 1234
+//nytt/fil2, 1234
+
+Serverliste
+//nytt/fil1, 1234
+//nytt/fil2, 1234
+//jeje/
+
+
+
+Local:
+
+arkiv/
+arkiv/fil1
+
+
+Local previous:
+
+
+remote:
+
+
+
+changes:
+CREATED, arkiv/,     mtime -> upload folder -> insert into RemoteFile
+CREATED, arkiv/fil1, mtime -> upload file -> insert into RemoteFile
+
+
+
+Local:
+arkiv/
+
+Local previous:
+arkiv/
+arkiv/fil1
+
+Remote:
+arkiv/
+arkiv/fil1
+
+
+changes:
+DELETED, arkiv/fil1, mtime -> delete file -> delete from RemoteFile
+
+
+DB:
+
+LocalFile
+=========
+path  (arkiv/fil1)
+mtime (123456)
+isDir
+
+
+RemoteFile
+==========
+path     (arkiv/fil1)
+mtime    (123456)
+folder   (maybe)
+document (maybe)
+isDir

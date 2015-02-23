@@ -6,12 +6,13 @@ import Control.Applicative
 import Sync
 import File
 import ApiTypes
+import FileTests
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests]
+tests = testGroup "Tests" [unitTests, fileTests]
 
 
 unitTests :: TestTree
