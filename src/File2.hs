@@ -2,13 +2,15 @@
 
 module File2 where
 
-import Data.Set
+import Data.Set (Set)
+import qualified Data.Set as Set
 import System.FilePath.Posix
 import ApiTypes (Folder, Document, folderName, filename)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.List
 
-data File = File {path :: FilePath} | Dir {path :: FilePath} deriving (Show, Eq, Ord)
+data File = File {path :: FilePath} | Dir {path :: FilePath} deriving (Show, Read, Eq, Ord)
 
 fileFromFolderDoc :: Folder -> Document -> File
 fileFromFolderDoc folder document = File $ folderName folder `combine` filename document
@@ -21,7 +23,7 @@ fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
 data Change = Created File | Deleted File deriving (Show, Eq)
 
-data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show)
+data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
 
 remoteFileFromFolderDoc :: Folder -> Document -> RemoteFile
 remoteFileFromFolderDoc folder document = RemoteFile (fileFromFolderDoc folder document) folder document
@@ -32,10 +34,20 @@ remoteDirFromFolder folder = RemoteDir (dirFromFolder folder) folder
 computeChanges :: Set File -> Set File -> [Change]
 computeChanges now previous =
     let
-        created = difference now previous
-        deleted = difference previous now
+        created = Set.difference now previous
+        deleted = Set.difference previous now
     in
-        fmap Created ((reverse . toAscList) created) ++ fmap Deleted (toAscList deleted)
+        fmap Created ((reverse . Set.toAscList) created) ++ fmap Deleted (Set.toAscList deleted)
+
+computeChangesToApply :: [Change] -> [Change] -> [Change]
+computeChangesToApply = (\\)
+
+computeNewStateFromChanges :: Set File -> [Change] -> Set File
+computeNewStateFromChanges = foldl applyChange
+    where
+        applyChange :: Set File -> Change -> Set File
+        applyChange resultSet (Created file) = Set.insert file resultSet
+        applyChange resultSet (Deleted file) = Set.delete file resultSet
 
 getFileSetFromMap :: Map File RemoteFile -> Set File
 getFileSetFromMap = Map.keysSet

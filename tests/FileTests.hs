@@ -27,7 +27,15 @@ fileTests = testGroup "File tests"
         in do
             assertEqual "" expectedLocalChanges actualLocalChanges
             assertEqual "" expectedRemoteChanges actualRemoteChanges
-            assertEqual "" changesToApplyToRemote $ actualLocalChanges \\ actualRemoteChanges
-            assertEqual "" changesToApplyToLocal $ actualRemoteChanges \\ actualLocalChanges
+            assertEqual "" changesToApplyToRemote $ computeChangesToApply actualLocalChanges actualRemoteChanges
+            assertEqual "" changesToApplyToLocal $ computeChangesToApply actualRemoteChanges actualLocalChanges
 
+  , testCase "comput new state" $
+        let
+            localFiles = Set.fromList [Dir "archive/", File "archive/file1", File "money/file2"]
+            changes = [Created (Dir "archive/"), Created (File "archive/file1"), Deleted (File "money/file2"), Deleted (Dir "money/")]
+            expectedNewState = Set.fromList [Dir "archive/", File "archive/file1"]
+            computedNewState = computeNewStateFromChanges localFiles changes
+        in do
+            assertEqual "" expectedNewState computedNewState
   ]
