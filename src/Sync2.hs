@@ -69,28 +69,28 @@ getDirContents dirPath = do
         return $ filter (not . specialFiles) names
     where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
---todo lag en funksjon som kun tar inn syncdir og gjør alle pather relative til den
---lag en ny indre funksjon som gjør rekursjon
---hvis ikke får vi med ./ i resultatet...
-getLocalState :: FilePath -> FilePath -> IO (Set File)
-getLocalState syncDirPath dirPath = do
-        properNames <- getDirContents dirPath
-        content <- forM properNames $ \name -> do
-            let subPath = dirPath </> name
-            isDirectory <- doesDirectoryExist subPath
-            if isDirectory
-                then getLocalState syncDirPath subPath
-                else return $ Set.singleton (File $ makeRelative syncDirPath subPath)
-        let contentSet = Set.unions content
-        let dir = Dir $ addTrailingPathSeparator (makeRelative syncDirPath dirPath)
-        return $ Set.insert dir contentSet
+getLocalState :: FilePath -> IO (Set File)
+getLocalState syncDirPath = findFilesRecursive syncDirPath
+    where
+        relativeToSyncDir = makeRelative syncDirPath
+        findFilesRecursive dirPath = do
+            properNames <- getDirContents dirPath
+            content <- forM properNames $ \name -> do
+                let subPath = dirPath </> name
+                isDirectory <- doesDirectoryExist subPath
+                if isDirectory
+                    then findFilesRecursive subPath
+                    else return $ Set.singleton (File $ relativeToSyncDir subPath)
+            let contentSet = Set.unions content
+            let dir = Dir $ addTrailingPathSeparator (relativeToSyncDir dirPath)
+            return $ if File2.path dir == "./" then contentSet else Set.insert dir contentSet
 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
     syncDir <- getOrCreateSyncDir
     let syncFile = getSyncFile syncDir
     previousState <- readSyncState syncFile
-    localState <- getLocalState syncDir syncDir
+    localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
 
 sync :: IO ()
