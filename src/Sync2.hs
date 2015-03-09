@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Sync2 where
 
@@ -14,8 +14,9 @@ import System.FilePath.Posix
 import System.Directory
 import Data.List
 import Data.Maybe
-import Control.Exception
+import Control.Exception.Lifted
 import Text.Read (readMaybe)
+import Data.Either
 
 import Api
 import qualified ApiTypes as DP
@@ -92,6 +93,40 @@ initLocalState = do
     previousState <- readSyncState syncFile
     localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
+
+applyChangesLocal :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
+applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
+    where
+        absoluteTo = combine syncDir
+        applyChange :: Change -> ApiAction (Maybe Change)
+        applyChange (Created file) =
+            let
+                absoluteTargetFile = absoluteTo (File2.path file)
+                remoteFile = Map.lookup file remoteFiles
+            in
+                case remoteFile of
+                    Just r -> do
+                        res <- try (download r absoluteTargetFile) :: ApiAction (Either ApiException ())
+                        return $ if isRight res then Just (Created file) else Nothing
+                    Nothing -> return Nothing
+        applyChange (Deleted file) = do
+            res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
+            return $ if isRight res then Just (Deleted file) else Nothing
+
+--TODO
+deleteLocal :: FilePath -> IO ()
+deleteLocal targetFile = return ()
+
+--TODO
+download :: RemoteFile -> FilePath -> ApiAction ()
+download remoteFile targetFile = return ()
+
+recoverFromApiException :: IO a -> IO (Maybe a)
+recoverFromApiException action = do
+    res <- try action
+    return $ case res of
+        Right value -> Just value
+        Left (_ :: ApiException) -> Nothing
 
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
