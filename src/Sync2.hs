@@ -126,16 +126,11 @@ deleteLocal targetFile = do
               | isDoesNotExistError e = return ()
               | otherwise = throwIO e
 
---TODO
 download :: RemoteFile -> FilePath -> ApiAction ()
-download remoteFile targetFile = return ()
-
-recoverFromApiException :: IO a -> IO (Maybe a)
-recoverFromApiException action = do
-    res <- try action
-    return $ case res of
-        Right value -> Just value
-        Left (_ :: ApiException) -> Nothing
+download (RemoteFile _ _ document) targetFile = do
+    (manager, aToken, _, _) <- ask
+    liftResourceT $ downloadDocument aToken manager targetFile document
+download (RemoteDir _ _) targetFile = liftIO $ createDirectory targetFile
 
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
@@ -162,6 +157,11 @@ sync' token = do
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
             liftIO $ print changesToApplyLocal
             liftIO $ print changesToApplyRemote
+            appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
+            liftIO $ print appliedLocalChanges
+            let newLocalState = computeNewStateFromChanges previousLocalFiles appliedLocalChanges
+            liftIO $ print appliedLocalChanges
+            liftIO $ writeSyncState (syncFile ++ "2") (SyncState newLocalState previousRemoteState)
             return ()
 
 getUserSyncDir :: IO FilePath
