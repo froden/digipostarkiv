@@ -12,6 +12,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import System.FilePath.Posix
 import System.Directory
+import System.IO.Error
 import Data.List
 import Data.Maybe
 import Control.Exception.Lifted
@@ -113,9 +114,17 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
             res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
             return $ if isRight res then Just (Deleted file) else Nothing
 
---TODO
+
 deleteLocal :: FilePath -> IO ()
-deleteLocal targetFile = return ()
+deleteLocal targetFile = do
+    isDir <- doesDirectoryExist targetFile
+    if isDir then
+        removeDirectoryRecursive targetFile `catch` handleExists
+    else
+        removeFile targetFile `catch` handleExists
+    where handleExists e
+              | isDoesNotExistError e = return ()
+              | otherwise = throwIO e
 
 --TODO
 download :: RemoteFile -> FilePath -> ApiAction ()
