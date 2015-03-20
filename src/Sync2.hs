@@ -43,7 +43,10 @@ readSyncState syncFile = do
     where emptyState = SyncState Set.empty Map.empty
 
 writeSyncState :: FilePath -> SyncState -> IO ()
-writeSyncState syncFile state = writeFile syncFile (show state)
+writeSyncState syncFile state = do
+    let tempFile = syncFile ++ ".tmp"
+    writeFile tempFile (show state)
+    renameFile tempFile syncFile
 
 getRemoteState :: ApiAction (Map File RemoteFile)
 getRemoteState = do
@@ -130,7 +133,9 @@ download :: RemoteFile -> FilePath -> ApiAction ()
 download (RemoteFile _ _ document) targetFile = do
     (manager, aToken, _, _) <- ask
     liftResourceT $ downloadDocument aToken manager targetFile document
-download (RemoteDir _ _) targetFile = liftIO $ createDirectory targetFile
+download (RemoteDir _ _) targetFile = liftIO $ do
+    dirExists <- doesDirectoryExist targetFile
+    unless dirExists $ createDirectory targetFile
 
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
@@ -147,21 +152,20 @@ sync' token = do
             let previousRemoteState = remoteSyncState previousState
             let previousRemoteFiles = getFileSetFromMap previousRemoteState
             let previousLocalFiles = localSyncState previousState
-            liftIO $ print remoteFiles
-            liftIO $ print previousRemoteFiles
-            liftIO $ print localFiles
-            liftIO $ print previousLocalFiles
+--             liftIO $ debugLog ("remoteFiles " ++ show remoteFiles)
+--             liftIO $ debugLog ("previousRemoteFiles " ++ show previousRemoteFiles)
+--             liftIO $ debugLog ("localFiles" ++ show localFiles)
+--             liftIO $ debugLog ("previousLocalFiles" + show previousLocalFiles)
             let localChanges = computeChanges localFiles previousLocalFiles
             let remoteChanges = computeChanges remoteFiles previousRemoteFiles
             let changesToApplyLocal = computeChangesToApply remoteChanges localChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ print changesToApplyLocal
-            liftIO $ print changesToApplyRemote
+            liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
+            liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
-            liftIO $ print appliedLocalChanges
-            let newLocalState = computeNewStateFromChanges previousLocalFiles appliedLocalChanges
-            liftIO $ print appliedLocalChanges
-            liftIO $ writeSyncState (syncFile ++ "2") (SyncState newLocalState previousRemoteState)
+            liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
+            let newLocalState = computeNewStateFromChanges localFiles appliedLocalChanges
+            liftIO $ writeSyncState syncFile (SyncState newLocalState remoteState)
             return ()
 
 getUserSyncDir :: IO FilePath
