@@ -19,6 +19,9 @@ data Folders = Folders { folder :: [Folder] } deriving (Show)
 data Folder = Folder { folderName :: String, icon :: String, folderLinks :: [Link], documents :: Maybe Documents } deriving (Show, Read)
 data Mailbox = Mailbox { folders :: Folders, mailboxLinks :: [Link] } deriving (Show)
 
+emptyDocument :: Document
+emptyDocument = Document "" "" "" []
+
 documentInFolder :: Folder -> [Document]
 documentInFolder f = document $ fromMaybe (Documents []) (documents f)
 

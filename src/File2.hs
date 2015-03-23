@@ -25,6 +25,9 @@ data Change = Created File | Deleted File deriving (Show, Eq)
 
 data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
 
+--data RemoteChange = RemoteCreated File RemoteFile | RemoteDeleted File RemoteFile deriving (Show)
+data RemoteChange = RemoteChange Change RemoteFile deriving (Show)
+
 remoteFileFromFolderDoc :: Folder -> Document -> RemoteFile
 remoteFileFromFolderDoc folder document = RemoteFile (fileFromFolderDoc folder document) folder document
 
@@ -48,6 +51,13 @@ computeNewStateFromChanges = foldl applyChange
         applyChange :: Set File -> Change -> Set File
         applyChange resultSet (Created file) = Set.insert file resultSet
         applyChange resultSet (Deleted file) = Set.delete file resultSet
+
+computeNewRemoteStateFromChanges :: Map File RemoteFile -> [RemoteChange] -> Map File RemoteFile
+computeNewRemoteStateFromChanges = foldl applyChange
+    where
+        applyChange :: Map File RemoteFile -> RemoteChange -> Map File RemoteFile
+        applyChange resultMap (RemoteChange (Created file) remoteFile) = Map.insert file remoteFile resultMap
+        applyChange resultMap (RemoteChange (Deleted file) _) = Map.delete file resultMap
 
 getFileSetFromMap :: Map File RemoteFile -> Set File
 getFileSetFromMap = Map.keysSet
