@@ -138,13 +138,14 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
                 applyChange remoteFiles currentChange@(Created (File filePath)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
-                    let (Just (RemoteDir _ parentFolder)) = Map.lookup (Dir parentDirPath) remoteFiles
-                    uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
                     let absoluteFilePath = combine syncDir filePath
-                    (manager, aToken, csrf, _) <- ask
-                    liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
-                    -- return empty document because upload does not return document or link
-                    return $ Just (RemoteChange currentChange Nothing)
+                    let parentDirMaybe = Map.lookup (Dir parentDirPath) remoteFiles
+                    case parentDirMaybe of
+                        Just parentDir -> do
+                            upload parentDir absoluteFilePath
+                            -- return empty document because upload does not return document or link
+                            return $ Just (RemoteChange currentChange Nothing)
+                        Nothing -> return Nothing
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
@@ -160,6 +161,13 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             return $ Just (RemoteChange currentChange (Just remoteFile))
                         --assume allready deleted
                         Nothing -> return $ Just (RemoteChange currentChange Nothing)
+
+upload :: RemoteFile -> FilePath -> ApiAction ()
+upload (RemoteDir _ parentFolder) absoluteFilePath = do
+    uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
+    (manager, aToken, csrf, _) <- ask
+    liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
+upload _ _ = error "parent dir cannot be a file"
 
 deleteRemote :: RemoteFile -> ApiAction ()
 deleteRemote (RemoteFile _ _ document) = do
