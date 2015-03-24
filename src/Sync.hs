@@ -3,7 +3,6 @@
 module Sync where
 
 import Network.HTTP.Conduit
-import Network.HTTP.Types.Status
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
@@ -20,7 +19,6 @@ import Api
 import qualified ApiTypes as DP
 import Oauth
 import Http (AccessToken)
-import Error
 import File
 
 type CSRFToken = String
@@ -189,20 +187,6 @@ deleteFolder :: DP.Folder -> ApiAction ()
 deleteFolder folder = do
     (manager, aToken, csrfToken, _) <- ask
     liftResourceT $ Api.deleteFolder aToken manager csrfToken folder
-
-handleTokenRefresh :: (AccessToken -> IO a) -> AccessToken -> IO a
-handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
-    where
-        handleException (StatusCodeException (Status 403 _) hdrs _) = do
-            debugLog $ "403 status" ++ show hdrs
-            newToken <- refreshAccessToken token --TODO: exceptions?
-            storeAccessToken newToken
-            accessFunc newToken  --TODO: retry count??
-        handleException (StatusCodeException (Status 401 _) hdrs _) = do
-            debugLog $ "401 status " ++ show hdrs
-            throwIO NotAuthenticated
-        handleException e = throwIO $ HttpFailed e
-
 
 initLocalState :: IO (FilePath, FilePath, SyncState, FileTree)
 initLocalState = do

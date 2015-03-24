@@ -10,6 +10,8 @@ import Control.Exception
 import System.FilePath.Posix
 import System.Directory
 import Text.Read
+import Network.HTTP.Conduit
+import Network.HTTP.Types.Status
 
 import Network.OAuth.OAuth2
 
@@ -59,6 +61,16 @@ loadAccessToken = catch readFileIfExists whenNotFound
               Nothing -> throwIO NotAuthenticated
         whenNotFound :: IOException -> IO HTTP.AccessToken
         whenNotFound _ = throwIO NotAuthenticated
+
+handleTokenRefresh :: (HTTP.AccessToken -> IO a) -> HTTP.AccessToken -> IO a
+handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
+    where
+        handleException (StatusCodeException (Status 403 _) _ _) = do
+            newToken <- refreshAccessToken token --TODO: exceptions?
+            storeAccessToken newToken
+            accessFunc newToken  --TODO: retry count??
+        handleException (StatusCodeException (Status 401 _) _ _) = throwIO NotAuthenticated
+        handleException e = throwIO $ HttpFailed e
 
 removeAccessToken :: IO ()
 removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile

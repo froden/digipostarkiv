@@ -27,7 +27,6 @@ import qualified ApiTypes as DP
 import Http (AccessToken)
 import File2
 import Oauth
-import Sync (handleTokenRefresh)
 
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
