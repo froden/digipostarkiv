@@ -6,7 +6,6 @@ import Network.HTTP.Conduit
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
-import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
@@ -120,12 +119,12 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
 
 --TODO: error handling
 applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
-applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remoteFiles changes
+applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
     where
         applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe Change]
         applyChanges _ [] = return []
-        applyChanges remoteState (currentChange:tailChanges) = do
-            remoteChangeMaybe <- applyChange remoteState currentChange --try here
+        applyChanges remoteState (headChange:tailChanges) = do
+            remoteChangeMaybe <- applyChange remoteState headChange --try here
             case remoteChangeMaybe of
                 Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do --created folder
                     let newState = Map.insert file newFolder remoteState
@@ -137,7 +136,7 @@ applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remo
                 Nothing -> applyChanges remoteState tailChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created currentFile@(File filePath)) = do
+                applyChange remoteFiles currentChange@(Created (File filePath)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
                     let (Just (RemoteDir _ parentFolder)) = Map.lookup (Dir parentDirPath) remoteFiles
                     uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
@@ -153,13 +152,14 @@ applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remo
                     createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
                     newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
                     return $ Just (RemoteChange currentChange (Just $ RemoteDir currentDir newFolder))
-                applyChange _ currentChange@(Deleted file) = do
+                applyChange remoteFiles currentChange@(Deleted file) = do
                     let remoteFileMaybe = Map.lookup file remoteFiles
                     case remoteFileMaybe of
                         Just remoteFile -> do
                             deleteRemote remoteFile
                             return $ Just (RemoteChange currentChange (Just remoteFile))
-                        Nothing -> return $ Just (RemoteChange currentChange Nothing) --assume allready deleted
+                        --assume allready deleted
+                        Nothing -> return $ Just (RemoteChange currentChange Nothing)
 
 deleteRemote :: RemoteFile -> ApiAction ()
 deleteRemote (RemoteFile _ _ document) = do
