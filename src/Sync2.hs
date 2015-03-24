@@ -6,6 +6,7 @@ import Network.HTTP.Conduit
 import Control.Monad.Error
 import Control.Monad.Trans.Resource
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
+import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
@@ -18,6 +19,8 @@ import Data.Maybe
 import Control.Exception.Lifted
 import Text.Read (readMaybe)
 import Data.Either
+import Data.Time
+import System.Locale
 
 import Api
 import qualified ApiTypes as DP
@@ -124,16 +127,19 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
         applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe Change]
         applyChanges _ [] = return []
         applyChanges remoteState (headChange:tailChanges) = do
-            remoteChangeMaybe <- applyChange remoteState headChange --try here
-            case remoteChangeMaybe of
-                Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do --created folder
-                    let newState = Map.insert file newFolder remoteState
-                    appliedChanges <- applyChanges newState tailChanges
-                    return $ Just change : appliedChanges
-                Just (RemoteChange change _) -> do
-                    appliedChanges <- applyChanges remoteState tailChanges
-                    return $ Just change : appliedChanges
-                Nothing -> applyChanges remoteState tailChanges
+            res <- try (applyChange remoteState headChange) :: ApiAction (Either SomeException (Maybe RemoteChange))
+            case res of
+                Right remoteChangeMaybe ->
+                    case remoteChangeMaybe of
+                        Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do --created folder
+                            let newState = Map.insert file newFolder remoteState
+                            appliedChanges <- applyChanges newState tailChanges
+                            return $ Just change : appliedChanges
+                        Just (RemoteChange change _) -> do
+                            appliedChanges <- applyChanges remoteState tailChanges
+                            return $ Just change : appliedChanges
+                        Nothing -> applyChanges remoteState tailChanges
+                Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
                 applyChange remoteFiles currentChange@(Created (File filePath)) = do
@@ -246,3 +252,12 @@ getSyncFile syncDir = combine syncDir ".sync"
 debugLog :: String -> IO ()
 debugLog = putStrLn
 -- debugLog _ = return ()
+
+printError :: SomeException -> IO ()
+printError e = do
+        let dateFormat = iso8601DateFormat (Just "%H:%M:%S")
+        timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime
+        let msg = timestamp ++ " " ++ show e
+        print msg
+        logFile <- fmap (`combine` ".synclog") getUserSyncDir
+        appendFile logFile $ msg ++ "\n"
