@@ -118,35 +118,33 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
             res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
             return $ if isRight res then Just currentChange else Nothing
 
+--TODO: error handling
 applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [RemoteChange]
 applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remoteFiles changes
     where
         applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe RemoteChange]
         applyChanges _ [] = return []
         applyChanges remoteState (currentChange:tailChanges) = do
-            remoteChange <- applyChange remoteState currentChange
+            remoteChange <- applyChange remoteState currentChange --try here
             case remoteChange of
                 Just (RemoteChange _ newFolder@(RemoteDir file _)) -> do
                     let newState = Map.insert file newFolder remoteState
-                    changes <- applyChanges newState tailChanges
-                    return $ remoteChange : changes
+                    appliedChanges <- applyChanges newState tailChanges
+                    return $ remoteChange : appliedChanges
                 _ -> do
-                    changes <- applyChanges remoteState tailChanges
-                    return $ remoteChange : changes
+                    appliedChanges <- applyChanges remoteState tailChanges
+                    return $ remoteChange : appliedChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
                 applyChange remoteFiles currentChange@(Created currentFile@(File filePath)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
-                    let parentFolderMaybe = Map.lookup (Dir parentDirPath) remoteFiles
-                    case parentFolderMaybe of
-                        Just (RemoteDir _ parentFolder) -> do
-                            uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
-                            let absoluteFilePath = combine syncDir filePath
-                            (manager, aToken, csrf, _) <- ask
-                            liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
-                            -- hack because upload does not return document or link
-                            return $ Just (RemoteChange currentChange (RemoteFile currentFile parentFolder DP.emptyDocument))
-                        _ -> error "should only be a parent folder"
+                    let (Just (RemoteDir _ parentFolder)) = Map.lookup (Dir parentDirPath) remoteFiles
+                    uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
+                    let absoluteFilePath = combine syncDir filePath
+                    (manager, aToken, csrf, _) <- ask
+                    liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
+                    -- return empty document because upload does not return document or link
+                    return $ Just (RemoteChange currentChange (RemoteFile currentFile parentFolder DP.emptyDocument))
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
@@ -158,8 +156,8 @@ applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remo
                     let remoteFileMaybe = Map.lookup file remoteFiles
                     case remoteFileMaybe of
                         Just remoteFile -> do
-                            res <- try $ deleteRemote remoteFile :: ApiAction (Either IOException ())
-                            return $ if isRight res then Just (RemoteChange currentChange remoteFile) else Nothing
+                            deleteRemote remoteFile
+                            return $ Just (RemoteChange currentChange remoteFile)
                         Nothing -> return Nothing
 
 deleteRemote :: RemoteFile -> ApiAction ()
