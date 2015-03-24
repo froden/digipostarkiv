@@ -30,7 +30,7 @@ import Sync (handleTokenRefresh)
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
 
-data SyncState = SyncState {localSyncState :: Set File, remoteSyncState :: Map File RemoteFile} deriving (Show, Read)
+data SyncState = SyncState {localSyncState :: Set File, remoteSyncState :: Set File} deriving (Show, Read)
 
 syncDirName :: String
 syncDirName = "Digipostarkiv"
@@ -41,7 +41,7 @@ readSyncState syncFile = do
         case r of
             Right content -> return $ fromMaybe emptyState (readMaybe content)
             Left _ -> return emptyState
-    where emptyState = SyncState Set.empty Map.empty
+    where emptyState = SyncState Set.empty Set.empty
 
 writeSyncState :: FilePath -> SyncState -> IO ()
 writeSyncState syncFile state = do
@@ -119,21 +119,22 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
             return $ if isRight res then Just currentChange else Nothing
 
 --TODO: error handling
-applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [RemoteChange]
+applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remoteFiles changes
     where
-        applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe RemoteChange]
+        applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe Change]
         applyChanges _ [] = return []
         applyChanges remoteState (currentChange:tailChanges) = do
-            remoteChange <- applyChange remoteState currentChange --try here
-            case remoteChange of
-                Just (RemoteChange _ newFolder@(RemoteDir file _)) -> do
+            remoteChangeMaybe <- applyChange remoteState currentChange --try here
+            case remoteChangeMaybe of
+                Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do --created folder
                     let newState = Map.insert file newFolder remoteState
                     appliedChanges <- applyChanges newState tailChanges
-                    return $ remoteChange : appliedChanges
-                _ -> do
+                    return $ Just change : appliedChanges
+                Just (RemoteChange change _) -> do
                     appliedChanges <- applyChanges remoteState tailChanges
-                    return $ remoteChange : appliedChanges
+                    return $ Just change : appliedChanges
+                Nothing -> applyChanges remoteState tailChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
                 applyChange remoteFiles currentChange@(Created currentFile@(File filePath)) = do
@@ -144,21 +145,21 @@ applyChangesRemote syncDir remoteFiles changes = catMaybes <$> applyChanges remo
                     (manager, aToken, csrf, _) <- ask
                     liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
                     -- return empty document because upload does not return document or link
-                    return $ Just (RemoteChange currentChange (RemoteFile currentFile parentFolder DP.emptyDocument))
+                    return $ Just (RemoteChange currentChange Nothing)
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
                     (manager, aToken, csrfToken, mbox) <- ask
                     createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
                     newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
-                    return $ Just (RemoteChange currentChange (RemoteDir currentDir newFolder))
+                    return $ Just (RemoteChange currentChange (Just $ RemoteDir currentDir newFolder))
                 applyChange _ currentChange@(Deleted file) = do
                     let remoteFileMaybe = Map.lookup file remoteFiles
                     case remoteFileMaybe of
                         Just remoteFile -> do
                             deleteRemote remoteFile
-                            return $ Just (RemoteChange currentChange remoteFile)
-                        Nothing -> return Nothing
+                            return $ Just (RemoteChange currentChange (Just remoteFile))
+                        Nothing -> return $ Just (RemoteChange currentChange Nothing) --assume allready deleted
 
 deleteRemote :: RemoteFile -> ApiAction ()
 deleteRemote (RemoteFile _ _ document) = do
@@ -199,8 +200,7 @@ sync' token = do
         flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
             remoteState <- getRemoteState
             let remoteFiles = getFileSetFromMap remoteState
-            let previousRemoteState = remoteSyncState previousState
-            let previousRemoteFiles = getFileSetFromMap previousRemoteState
+            let previousRemoteFiles = remoteSyncState previousState
             let previousLocalFiles = localSyncState previousState
 --             liftIO $ debugLog ("remoteFiles " ++ show remoteFiles)
 --             liftIO $ debugLog ("previousRemoteFiles " ++ show previousRemoteFiles)
@@ -217,7 +217,7 @@ sync' token = do
             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
             let newLocalState = computeNewStateFromChanges localFiles appliedLocalChanges
-            let newRemoteState = computeNewRemoteStateFromChanges remoteState appliedRemoteChanges
+            let newRemoteState = computeNewStateFromChanges remoteFiles appliedRemoteChanges
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
 
