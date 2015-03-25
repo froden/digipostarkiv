@@ -201,6 +201,28 @@ download (RemoteDir _ _) targetFile = liftIO $ do
     dirExists <- doesDirectoryExist targetFile
     unless dirExists $ createDirectory targetFile
 
+checkLocalChange :: IO Bool
+checkLocalChange = do
+    (_, _, previousState, localFiles) <- initLocalState
+    let previousLocalFiles = localSyncState previousState
+    let localChanges = computeChanges localFiles previousLocalFiles
+    return $ not (null localChanges)
+
+checkRemoteChange :: IO Bool
+checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
+
+checkRemoteChange' :: AccessToken -> IO Bool
+checkRemoteChange' token = do
+    (_, _, previousState, _) <- initLocalState
+    runResourceT $ do
+        manager <- liftIO $ newManager conduitManagerSettings
+        (root, _, mbox) <- getAccount manager token
+        remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
+        let remoteFiles = getFileSetFromMap remoteState
+        let previousRemoteFiles = remoteSyncState previousState
+        let remoteChanges = computeChanges remoteFiles previousRemoteFiles
+        return $ not (null remoteChanges)
+
 sync :: IO ()
 sync = loadAccessToken >>= handleTokenRefresh sync'
 
@@ -249,7 +271,7 @@ debugLog :: String -> IO ()
 debugLog = putStrLn
 -- debugLog _ = return ()
 
-printError :: SomeException -> IO ()
+printError :: Exception a => a -> IO ()
 printError e = do
         let dateFormat = iso8601DateFormat (Just "%H:%M:%S")
         timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime

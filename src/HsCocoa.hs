@@ -7,13 +7,9 @@ import Foreign.C
 import Data.ByteString.Char8 (unpack)
 import Data.Either
 import Control.Exception
-import System.FilePath.Posix
-import Data.Time
-import System.Locale
-import Control.Applicative
 
 import qualified Oauth as O
-import Sync
+import Sync2
 import Http
 import Error
 
@@ -75,12 +71,3 @@ tryAny action = do
                 Left e -> case fromException e of
                         Just (se :: SyncError) -> return $ Left se
                         Nothing -> return $ Left (Unhandled e)
-
-printError :: SyncError -> IO ()
-printError e = do
-        let dateFormat = iso8601DateFormat (Just "%H:%M:%S")
-        timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime
-        let msg = timestamp ++ " " ++ show e
-        print msg
-        logFile <- fmap (`combine` ".synclog") getUserSyncDir
-        appendFile logFile $ msg ++ "\n"

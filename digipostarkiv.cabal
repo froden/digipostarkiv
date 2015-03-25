@@ -41,7 +41,7 @@ library
                        lifted-base
   hs-source-dirs:      src
   exposed-modules:     HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File, File2, Sync2
-  ghc-options:         -Wall
+  ghc-options:         -Wall -staticlib -threaded
   default-language:    Haskell2010
 
 executable digipostarkiv
