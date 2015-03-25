@@ -241,7 +241,8 @@ sync' token = do
             let previousLocalFiles = localSyncState previousState
             let localChanges = computeChanges localFiles previousLocalFiles
             let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-            let changesToApplyLocal = computeChangesToApply remoteChanges localChanges
+            --server always win if conflict
+            let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
@@ -270,8 +271,8 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
---debugLog = putStrLn
-debugLog _ = return ()
+debugLog = putStrLn
+-- debugLog _ = return ()
 
 printError :: Exception a => a -> IO ()
 printError e = do
