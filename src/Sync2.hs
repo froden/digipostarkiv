@@ -206,6 +206,7 @@ checkLocalChange = do
     (_, _, previousState, localFiles) <- initLocalState
     let previousLocalFiles = localSyncState previousState
     let localChanges = computeChanges localFiles previousLocalFiles
+    liftIO $ debugLog ("localChanges " ++ show localChanges)
     return $ not (null localChanges)
 
 checkRemoteChange :: IO Bool
@@ -221,6 +222,7 @@ checkRemoteChange' token = do
         let remoteFiles = getFileSetFromMap remoteState
         let previousRemoteFiles = remoteSyncState previousState
         let remoteChanges = computeChanges remoteFiles previousRemoteFiles
+        liftIO $ debugLog ("remoteChange " ++ show remoteChanges)
         return $ not (null remoteChanges)
 
 sync :: IO ()
@@ -268,8 +270,8 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
-debugLog = putStrLn
--- debugLog _ = return ()
+--debugLog = putStrLn
+debugLog _ = return ()
 
 printError :: Exception a => a -> IO ()
 printError e = do

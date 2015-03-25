@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Nerbraten. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+//#import <Cocoa/Cocoa.h>
 #import "HsCocoa_stub.h"
 #import "Rts.h"
 
