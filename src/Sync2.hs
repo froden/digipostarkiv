@@ -150,7 +150,7 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             upload parentDir absoluteFilePath
                             -- return empty document because upload does not return document or link
                             return $ Just (RemoteChange currentChange Nothing)
-                        Nothing -> return Nothing
+                        Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
@@ -227,10 +227,11 @@ sync' token = do
             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
+            let appliedChanges = appliedLocalChanges ++ appliedRemoteChanges
             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
-            let newLocalState = computeNewStateFromChanges localFiles appliedLocalChanges
-            let newRemoteState = computeNewStateFromChanges remoteFiles appliedRemoteChanges
+            let newLocalState = computeNewStateFromChanges previousLocalFiles appliedChanges
+            let newRemoteState = computeNewStateFromChanges previousRemoteFiles appliedChanges
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
 
