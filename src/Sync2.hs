@@ -215,10 +215,6 @@ sync' token = do
             let remoteFiles = getFileSetFromMap remoteState
             let previousRemoteFiles = remoteSyncState previousState
             let previousLocalFiles = localSyncState previousState
---             liftIO $ debugLog ("remoteFiles " ++ show remoteFiles)
---             liftIO $ debugLog ("previousRemoteFiles " ++ show previousRemoteFiles)
---             liftIO $ debugLog ("localFiles" ++ show localFiles)
---             liftIO $ debugLog ("previousLocalFiles" + show previousLocalFiles)
             let localChanges = computeChanges localFiles previousLocalFiles
             let remoteChanges = computeChanges remoteFiles previousRemoteFiles
             let changesToApplyLocal = computeChangesToApply remoteChanges localChanges
