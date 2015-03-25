@@ -5,21 +5,23 @@ module File2 where
 import Data.Set (Set)
 import qualified Data.Set as Set
 import System.FilePath.Posix
-import ApiTypes (Folder, Document, folderName, filename)
+import ApiTypes (Folder, Document, folderName, filename, createdTime)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.List
+import Data.Time.Clock
+import Data.Time.LocalTime
 
-data File = File {path :: FilePath} | Dir {path :: FilePath} deriving (Show, Read, Eq, Ord)
+data File = File {path :: FilePath, modifiedTime :: UTCTime} | Dir {path :: FilePath} deriving (Show, Read, Eq, Ord)
 
 fileFromFolderDoc :: Folder -> Document -> File
-fileFromFolderDoc folder document = File $ folderName folder `combine` filename document
+fileFromFolderDoc folder document = File (folderName folder `combine` filename document) ((zonedTimeToUTC . createdTime) document)
 
 dirFromFolder :: Folder -> File
 dirFromFolder folder = Dir $ (addTrailingPathSeparator . folderName) folder
 
-fileFromFilePath :: FilePath -> File
-fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
+-- fileFromFilePath :: FilePath -> File
+-- fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
 data Change = Created File | Deleted File deriving (Show, Eq)
 
@@ -43,7 +45,14 @@ computeChanges now previous =
         fmap Created ((reverse . Set.toAscList) created) ++ fmap Deleted (Set.toAscList deleted)
 
 computeChangesToApply :: [Change] -> [Change] -> [Change]
-computeChangesToApply = (\\)
+computeChangesToApply = deleteFirstsBy eqFileName
+    where
+        eqFileName (Created (File p1 _)) (Created (File p2 _)) = p1 == p2
+        eqFileName (Deleted (File p1 _)) (Deleted (File p2 _)) = p1 == p2
+        eqFileName (Created (Dir p1)) (Created (Dir p2)) = p1 == p2
+        eqFileName (Deleted (Dir p1)) (Deleted (Dir p2)) = p1 == p2
+        eqFileName _ _ = False
+
 
 computeNewStateFromChanges :: Set File -> [Change] -> Set File
 computeNewStateFromChanges = foldl applyChange
