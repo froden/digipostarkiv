@@ -119,7 +119,6 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
             res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
             return $ if isRight res then Just currentChange else Nothing
 
---TODO: error handling
 applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
     where
@@ -130,7 +129,8 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
             case res of
                 Right remoteChangeMaybe ->
                     case remoteChangeMaybe of
-                        Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do --created folder
+                        --adds newly created folder to remote state in case subsequent upload to that folder
+                        Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do
                             let newState = Map.insert file newFolder remoteState
                             appliedChanges <- applyChanges newState tailChanges
                             return $ Just change : appliedChanges
