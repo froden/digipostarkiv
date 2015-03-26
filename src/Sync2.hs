@@ -55,20 +55,36 @@ getRemoteState = do
     (_, _, _, mbox) <- ask
     let mboxFolders = (DP.folder . DP.folders) mbox
     contents <- mapM getFolderContents mboxFolders
-    return $ Map.unions contents
-  where
-    getFolderContents :: DP.Folder -> ApiAction (Map File RemoteFile)
-    getFolderContents folder = do
-        (manager, aToken, _, _) <- ask
-        folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
-        fullFolder <- liftResourceT $ getFolder aToken manager folderLink
-        let folderDocuments = filter DP.uploaded (DP.documentInFolder fullFolder)
-        let dir = (dirFromFolder folder, remoteDirFromFolder folder)
-        let files = map (mapFileToRemoteFile folder) folderDocuments
-        return $ Map.fromList (dir : files)
-      where
-        mapFileToRemoteFile fldr doc = let file = fileFromFolderDoc fldr doc
-                                         in (file, RemoteFile file fldr doc)
+    inboxContents <- getInboxContents
+    let allFolders = Map.unions contents
+    return $ Map.union inboxContents allFolders
+
+getInboxContents :: ApiAction (Map File RemoteFile)
+getInboxContents = do
+    (manager, aToken, _, mbox) <- ask
+    inboxLink <- liftIO $ linkOrException "document_inbox" $ DP.mailboxLinks mbox
+    documents <- liftResourceT $ getDocuments aToken manager inboxLink
+    let inboxDocuments = filter DP.uploaded (DP.document documents)
+    let dir = Dir "./"
+    uploadLink <- liftIO $ linkOrException "upload_document_to_inbox" $ DP.mailboxLinks mbox
+    let folder = DP.Folder "" "" [uploadLink { DP.rel = "upload_document" }] (Just $ DP.Documents inboxDocuments)
+    let remoteDir = RemoteDir dir folder
+    let files = map (mapFileToRemoteFile folder) inboxDocuments
+    return $ Map.fromList $ (dir, remoteDir) : files
+
+getFolderContents :: DP.Folder -> ApiAction (Map File RemoteFile)
+getFolderContents folder = do
+    (manager, aToken, _, _) <- ask
+    folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
+    fullFolder <- liftResourceT $ getFolder aToken manager folderLink
+    let folderDocuments = filter DP.uploaded (DP.documentInFolder fullFolder)
+    let dir = (dirFromFolder folder, remoteDirFromFolder folder)
+    let files = map (mapFileToRemoteFile folder) folderDocuments
+    return $ Map.fromList (dir : files)
+
+mapFileToRemoteFile :: DP.Folder -> DP.Document -> (File, RemoteFile)
+mapFileToRemoteFile fldr doc = let file = fileFromFolderDoc fldr doc
+                               in (file, RemoteFile file fldr doc)
 
 getDirContents :: FilePath -> IO [FilePath]
 getDirContents dirPath = do
@@ -77,7 +93,7 @@ getDirContents dirPath = do
     where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getLocalState :: FilePath -> IO (Set File)
-getLocalState syncDirPath = findFilesRecursive syncDirPath
+getLocalState syncDirPath = Set.insert (Dir "./") <$> findFilesRecursive syncDirPath
     where
         relativeToSyncDir = makeRelative syncDirPath
         findFilesRecursive dirPath = do
@@ -150,6 +166,7 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             upload parentDir absoluteFilePath
                             -- return empty document because upload does not return document or link
                             return $ Just (RemoteChange currentChange Nothing)
+                        --TODO: upload to inbox when parent dir is ./
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
