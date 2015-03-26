@@ -101,9 +101,10 @@ getLocalState syncDirPath = Set.insert (Dir "./") <$> findFilesRecursive syncDir
             content <- forM properNames $ \name -> do
                 let subPath = dirPath </> name
                 isDirectory <- doesDirectoryExist subPath
+                modificationTime <- getModificationTime subPath
                 if isDirectory
                     then findFilesRecursive subPath
-                    else return $ Set.singleton (File $ relativeToSyncDir subPath)
+                    else return $ Set.singleton $ File (relativeToSyncDir subPath) modificationTime
             let contentSet = Set.unions content
             let dir = Dir $ addTrailingPathSeparator (relativeToSyncDir dirPath)
             return $ if File2.path dir == "./" then contentSet else Set.insert dir contentSet
@@ -157,7 +158,7 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created (File filePath)) = do
+                applyChange remoteFiles currentChange@(Created (File filePath _)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
                     let absoluteFilePath = combine syncDir filePath
                     let parentDirMaybe = Map.lookup (Dir parentDirPath) remoteFiles

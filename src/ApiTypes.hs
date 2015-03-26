@@ -9,18 +9,16 @@ import GHC.Generics (Generic)
 import Data.List
 import Data.Char
 import Data.Maybe (fromMaybe)
+import Data.Time
 
 data Link = Link { rel :: String, uri :: String } deriving (Show, Read, Generic)
 data Root = Root { csrfToken :: String, primaryAccount :: Account, mailbox :: [Mailbox], rootLinks :: [Link] } deriving (Show)
 data Account = Account { fullName :: String, accountLinks :: [Link] } deriving (Show)
 data Documents = Documents { document :: [Document] } deriving (Show, Read)
-data Document = Document { subject :: String, origin :: String, fileType :: String, documentLinks :: [Link] } deriving (Show, Read)
+data Document = Document { subject :: String, origin :: String, fileType :: String, createdTime :: ZonedTime, documentLinks :: [Link] } deriving (Show, Read)
 data Folders = Folders { folder :: [Folder] } deriving (Show)
 data Folder = Folder { folderName :: String, icon :: String, folderLinks :: [Link], documents :: Maybe Documents } deriving (Show, Read)
 data Mailbox = Mailbox { folders :: Folders, mailboxLinks :: [Link] } deriving (Show)
-
-emptyDocument :: Document
-emptyDocument = Document "" "" "" []
 
 documentInFolder :: Folder -> [Document]
 documentInFolder f = document $ fromMaybe (Documents []) (documents f)
@@ -88,14 +86,16 @@ instance FromJSON Document where
                             v .: "subject" <*>
                             v .: "origin" <*>
                             v .: "fileType" <*>
+                            v .: "created" <*>
                             v .: "link"
     parseJSON _          = mzero
 
 instance ToJSON Document where
-    toJSON (Document s o ft l) = object [
+    toJSON (Document s o ft c l) = object [
                                     "subject" .= s,
                                     "origin" .= o,
                                     "fileType" .= ft,
+                                    "created" .= c,
                                     "link" .= l]
 
 instance FromJSON Folders where
