@@ -12,6 +12,11 @@ import Data.List
 
 data File = File {path :: FilePath} | Dir {path :: FilePath} deriving (Show, Read, Eq, Ord)
 
+filePathEq :: File -> File -> Bool
+filePathEq (File path1) (File path2) = path1 == path2
+filePathEq (Dir path1) (Dir path2) = path1 == path2
+filePathEq _ _ = False
+
 fileFromFolderDoc :: Folder -> Document -> File
 fileFromFolderDoc folder document = File $ folderName folder `combine` filename document
 
@@ -21,7 +26,12 @@ dirFromFolder folder = Dir $ (addTrailingPathSeparator . folderName) folder
 fileFromFilePath :: FilePath -> File
 fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
-data Change = Created File | Deleted File deriving (Show, Eq)
+data Change = Created File | Deleted File deriving (Show)
+
+instance Eq Change where
+    (Created file1) == (Created file2) = file1 `filePathEq` file2
+    (Deleted file1) == (Deleted file2) = file1 `filePathEq` file2
+    _ == _ = False
 
 data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
 
