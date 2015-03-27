@@ -12,10 +12,12 @@ import Data.List
 import Data.Time.Clock
 import Data.Time.LocalTime
 
-data File = File {path :: FilePath, modifiedTime :: UTCTime} | Dir {path :: FilePath} deriving (Show, Read, Eq, Ord)
+newtype Path = Path {filePath :: FilePath} deriving (Show, Read, Eq, Ord)
+
+data File = File {path :: Path, modifiedTime :: UTCTime} | Dir {path :: Path} deriving (Show, Read, Eq, Ord)
 
 filePathEq :: File -> File -> Bool
-filePathEq (File path1) (File path2) = path1 == path2
+filePathEq (File path1 _) (File path2 _) = path1 == path2
 filePathEq (Dir path1) (Dir path2) = path1 == path2
 filePathEq _ _ = False
 
@@ -25,14 +27,17 @@ fileFromFolderDoc folder document = File (folderName folder `combine` filename d
 dirFromFolder :: Folder -> File
 dirFromFolder folder = Dir $ (addTrailingPathSeparator . folderName) folder
 
--- fileFromFilePath :: FilePath -> File
--- fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
+--fileFromFilePath :: FilePath -> File
+--fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
-data Change = Created File | Deleted File deriving (Show)
+data Change = Created  {createdPath  :: Path}
+            | Deleted  {deletedPath  :: Path}
+            | Modified {modifiedP :: File} deriving (Show)
 
 instance Eq Change where
     (Created file1) == (Created file2) = file1 `filePathEq` file2
     (Deleted file1) == (Deleted file2) = file1 `filePathEq` file2
+    (Modified file1) == (Modified file2) = file1 `filePathEq` file2
     _ == _ = False
 
 data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
@@ -55,13 +60,7 @@ computeChanges now previous =
         fmap Created ((reverse . Set.toAscList) created) ++ fmap Deleted (Set.toAscList deleted)
 
 computeChangesToApply :: [Change] -> [Change] -> [Change]
-computeChangesToApply = deleteFirstsBy eqFileName
-    where
-        eqFileName (Created (File p1 _)) (Created (File p2 _)) = p1 == p2
-        eqFileName (Deleted (File p1 _)) (Deleted (File p2 _)) = p1 == p2
-        eqFileName (Created (Dir p1)) (Created (Dir p2)) = p1 == p2
-        eqFileName (Deleted (Dir p1)) (Deleted (Dir p2)) = p1 == p2
-        eqFileName _ _ = False
+computeChangesToApply = (\\)
 
 
 computeNewStateFromChanges :: Set File -> [Change] -> Set File

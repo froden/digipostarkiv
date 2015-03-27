@@ -130,8 +130,14 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
                 case remoteFile of
                     Just r -> do
                         res <- try (download r absoluteTargetFile) :: ApiAction (Either ApiException ())
-                        return $ if isRight res then Just currentChange else Nothing
-                    Nothing -> return Nothing
+                        if isRight res then do
+                            newFileModified <- liftIO $ getModificationTime absoluteTargetFile
+                            case file of
+                                (File _ _) -> return $ Just currentChange { createdFile = file { modifiedTime = newFileModified }}
+                                (Dir _) -> return $ Just currentChange
+                        else
+                            return Nothing
+                    Nothing -> error $ "file to download not found: " ++ show file
         applyChange currentChange@(Deleted file) = do
             res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
             return $ if isRight res then Just currentChange else Nothing
@@ -158,16 +164,16 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
                 applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created (File filePath _)) = do
+                applyChange remoteFiles currentChange@(Created currentFile@(File filePath _)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
                     let absoluteFilePath = combine syncDir filePath
                     let parentDirMaybe = Map.lookup (Dir parentDirPath) remoteFiles
                     case parentDirMaybe of
                         Just parentDir -> do
                             upload parentDir absoluteFilePath
+                            RemoteFile file _ _ <- getUploadedDocument parentDir currentFile
                             -- return empty document because upload does not return document or link
-                            return $ Just (RemoteChange currentChange Nothing)
-                        --TODO: upload to inbox when parent dir is ./
+                            return $ Just (RemoteChange currentChange {createdFile = file} Nothing)
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
                 applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
@@ -183,7 +189,14 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             deleteRemote remoteFile
                             return $ Just (RemoteChange currentChange (Just remoteFile))
                         --assume allready deleted
-                        Nothing -> return $ Just (RemoteChange currentChange Nothing)
+                        --Nothing -> return $ Just (RemoteChange currentChange Nothing)
+                        Nothing -> error $ "remote file not found: " ++ show file
+
+getUploadedDocument :: RemoteFile -> File -> ApiAction RemoteFile
+getUploadedDocument (RemoteDir _ parentFolder) file = do
+    contents <- getFolderContents parentFolder
+    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup file contents)
+getUploadedDocument d f = error $ "parent dir is file or file is dir:\n" ++ show d ++ "\n" ++ show f
 
 upload :: RemoteFile -> FilePath -> ApiAction ()
 upload (RemoteDir _ parentFolder) absoluteFilePath = do
@@ -262,15 +275,19 @@ sync' token = do
             --server always win if conflict
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
+            liftIO $ debugLog ("locaChanges " ++ show localChanges)
+            liftIO $ debugLog ("remoteChanges" ++ show remoteChanges)
             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
-            let appliedChanges = appliedLocalChanges ++ appliedRemoteChanges
+--             let appliedLocalChanges  = [] :: [Change]
+--             let appliedRemoteChanges = [] :: [Change]
+            --let appliedChanges = appliedLocalChanges ++ appliedRemoteChanges
             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
-            let newLocalState = computeNewStateFromChanges previousLocalFiles appliedChanges
-            let newRemoteState = computeNewStateFromChanges previousRemoteFiles appliedChanges
+            let newLocalState = computeNewStateFromChanges previousLocalFiles (localChanges ++ appliedLocalChanges)
+            let newRemoteState = computeNewStateFromChanges previousRemoteFiles (remoteChanges ++ appliedRemoteChanges)
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
 
