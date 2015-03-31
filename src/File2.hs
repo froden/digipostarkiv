@@ -39,16 +39,14 @@ isFile = not . isDir
 --fileFromFilePath :: FilePath -> File
 --fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
-data Change = Created  {file :: File}
-            | Deleted  {file :: File} deriving (Show)
+data Change = Created  {changedFile :: File}
+            | Deleted  {changedFile :: File} deriving (Show)
             -- | Modified {changePath :: Path}
 
 instance Eq Change where
     (Created file1) == (Created file2) = filePathEq file1 file2
     (Deleted file1) == (Deleted file2) = filePathEq file1 file2
     _ == _ = False
-
-data AppliedChange = AppliedChange Change File
 
 data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
 
@@ -71,7 +69,7 @@ computeChanges now previous =
         created = Set.difference now previous
         deleted = Set.difference previous now
     in
-        fmap Created ((reverse . Set.toAscList) created) ++ fmap Deleted (Set.toAscList deleted)
+        fmap Deleted (Set.toAscList deleted) ++ fmap Created ((reverse . Set.toAscList) created)
 
 computeChangesToApply :: [Change] -> [Change] -> [Change]
 computeChangesToApply = (\\)

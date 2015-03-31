@@ -2,7 +2,7 @@
 module Main where
 
 import Sync2
-import Control.Concurrent
+-- import Control.Concurrent
 
 main :: IO ()
 main = loop

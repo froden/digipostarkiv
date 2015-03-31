@@ -13,7 +13,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import System.FilePath.Posix
 import System.Directory
-import System.IO.Error
 import Data.List
 import Data.Maybe
 import Control.Exception.Lifted
@@ -108,9 +107,9 @@ getLocalState syncDirPath = Set.insert (Dir (Path "./")) <$> findFilesRecursive 
                     then findFilesRecursive subPath
                     else return $ Set.singleton $ File (Path $ relativeToSyncDir subPath) modificationTime
             let contentSet = Set.unions content
-            let filePath = addTrailingPathSeparator (relativeToSyncDir dirPath)
-            let dir = Dir $ Path filePath
-            return $ if filePath == "./" then contentSet else Set.insert dir contentSet
+            let relativeDirPath = addTrailingPathSeparator (relativeToSyncDir dirPath)
+            let dir = Dir $ Path relativeDirPath
+            return $ if relativeDirPath == "./" then contentSet else Set.insert dir contentSet
 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
@@ -127,9 +126,9 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
         applyChange :: Change -> ApiAction (Maybe Change)
         applyChange currentChange@(Created file) =
             let
-                path = File2.path file
-                absoluteTargetFile = absoluteTo (filePath path)
-                remoteFile = Map.lookup path remoteFiles
+                createdPath = File2.path file
+                absoluteTargetFile = absoluteTo (filePath createdPath)
+                remoteFile = Map.lookup createdPath remoteFiles
             in
                 case remoteFile of
                     Just r -> do
@@ -137,15 +136,15 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
                         if isRight res then do
                             newFileModified <- liftIO $ getModificationTime absoluteTargetFile
                             case r of
-                                RemoteFile {} -> return $ Just currentChange {file = File path newFileModified}
-                                RemoteDir {} -> return $ Just currentChange {file = Dir path}
+                                RemoteFile {} -> return $ Just currentChange {changedFile = File createdPath newFileModified}
+                                RemoteDir {} -> return $ Just currentChange {changedFile = Dir createdPath}
                         else
                             return Nothing
-                    Nothing -> error $ "file to download not found: " ++ show (File2.path file)
+                    Nothing -> error $ "file to download not found: " ++ show createdPath
         applyChange (Deleted file) = do
             res <- liftIO (try $ deleteLocal syncDir (File2.path file) :: IO (Either IOException File))
             case res of
-                Right file -> return $ Just (Deleted file)
+                Right deletedFile -> return $ Just (Deleted deletedFile)
                 Left e -> liftIO $ printError e >> return Nothing
 
 applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
@@ -159,20 +158,20 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 Right remoteChangeMaybe ->
                     case remoteChangeMaybe of
                         --adds newly created folder to remote state in case subsequent upload to that folder
-                        Just (RemoteChange (Created (Dir path)) newFolder@(RemoteDir dir _)) -> do
-                            let newState = Map.insert path newFolder remoteState
+                        Just (RemoteChange (Created (Dir createdPath)) newFolder@(RemoteDir dir _)) -> do
+                            let newState = Map.insert createdPath newFolder remoteState
                             appliedChanges <- applyChanges newState tailChanges
                             return $ Just (Created dir) : appliedChanges
                         Just (RemoteChange change remoteFile) -> do
                             appliedChanges <- applyChanges remoteState tailChanges
-                            return $ Just change {file = getFile remoteFile} : appliedChanges
+                            return $ Just change {changedFile = getFile remoteFile} : appliedChanges
                         Nothing -> applyChanges remoteState tailChanges
                 Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
                 applyChange :: Map Path RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created (File currentPath@(Path filePath) _)) = do
-                    let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
-                    let absoluteFilePath = combine syncDir filePath
+                applyChange remoteFiles currentChange@(Created (File currentPath@(Path relativeFilePath) _)) = do
+                    let parentDirPath = addTrailingPathSeparator . takeDirectory $ relativeFilePath
+                    let absoluteFilePath = syncDir </> relativeFilePath
                     let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
                     case parentDirMaybe of
                         Just parentDir -> do
@@ -182,27 +181,27 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             return $ Just (RemoteChange currentChange uploadedDoc)
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
-                applyChange remoteFiles currentChange@(Created (Dir path@(Path dirPath))) = do
+                applyChange _ currentChange@(Created (Dir (Path dirPath))) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
                     (manager, aToken, csrfToken, mbox) <- ask
                     createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
                     newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
-                    return $ Just (RemoteChange currentChange (RemoteDir (Dir path) newFolder))
+                    return $ Just (RemoteChange currentChange (RemoteDir (Dir (Path dirPath)) newFolder))
                 applyChange remoteFiles currentChange@(Deleted file) = do
-                    let path = File2.path file
-                    let remoteFileMaybe = Map.lookup path remoteFiles
+                    let deletedPath = File2.path file
+                    let remoteFileMaybe = Map.lookup deletedPath remoteFiles
                     case remoteFileMaybe of
                         Just remoteFile -> do
                             deleteRemote remoteFile
                             return $ Just (RemoteChange currentChange remoteFile)
                         --assume allready deleted
                         --Nothing -> return $ Just (RemoteChange currentChange Nothing)
-                        Nothing -> error $ "remote file not found: " ++ show path
+                        Nothing -> error $ "remote file not found: " ++ show deletedPath
 
 getUploadedDocument :: RemoteFile -> Path -> ApiAction RemoteFile
-getUploadedDocument (RemoteDir _ parentFolder) path = do
+getUploadedDocument (RemoteDir _ parentFolder) docPath = do
     contents <- getFolderContents parentFolder
-    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup path contents)
+    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup docPath contents)
 getUploadedDocument d f = error $ "parent dir is file or file is dir:\n" ++ show d ++ "\n" ++ show f
 
 upload :: RemoteFile -> FilePath -> ApiAction ()
@@ -221,13 +220,13 @@ deleteRemote (RemoteDir _ folder) = do
     liftResourceT $ deleteFolder aToken manager csrf folder
 
 deleteLocal :: FilePath -> Path -> IO File
-deleteLocal syncDir p@(Path path) = deleteFileOrDir
+deleteLocal syncDir p@(Path relativePath) = deleteFileOrDir
     where
         deleteFileOrDir = do
-            let targetFile = syncDir </> path
-            isDir <- doesDirectoryExist targetFile
+            let targetFile = syncDir </> relativePath
+            isDirectory <- doesDirectoryExist targetFile
             modified <- getModificationTime targetFile
-            if isDir then
+            if isDirectory then
                 removeDirectoryRecursive targetFile >> return (Dir p)
             else
                 removeFile targetFile >> return (File p modified)
@@ -303,7 +302,7 @@ sync' token = do
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do
     homedir <- getHomeDirectory
-    return $ combine homedir syncDirName
+    return $ homedir </> syncDirName
 
 getOrCreateSyncDir :: IO FilePath
 getOrCreateSyncDir = do
@@ -324,5 +323,5 @@ printError e = do
         timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime
         let msg = timestamp ++ " " ++ show e
         print msg
-        logFile <- fmap (`combine` ".synclog") getUserSyncDir
+        logFile <- fmap (</> ".synclog") getUserSyncDir
         appendFile logFile $ msg ++ "\n"
