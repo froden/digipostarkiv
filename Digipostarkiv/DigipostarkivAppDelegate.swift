@@ -52,9 +52,9 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     
     func sync() {
         if (Sync.isLoggedIn()) {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+            //dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
                 self.detectChangeAndSync()
-            })
+            //})
         } else {
             stopSyncTimer()
             loginWindowController.showOauthLoginPage()

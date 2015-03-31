@@ -182,13 +182,14 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             return $ Just (RemoteChange currentChange uploadedDoc)
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
-                applyChange remoteFiles currentChange@(Created (File path@(Path dirPath) _)) = do
+                applyChange remoteFiles currentChange@(Created (Dir path@(Path dirPath))) = do
                     let folderName = takeFileName . takeDirectory $ dirPath
                     (manager, aToken, csrfToken, mbox) <- ask
                     createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
                     newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
                     return $ Just (RemoteChange currentChange (RemoteDir (Dir path) newFolder))
-                applyChange remoteFiles currentChange@(Deleted (File path _)) = do
+                applyChange remoteFiles currentChange@(Deleted file) = do
+                    let path = File2.path file
                     let remoteFileMaybe = Map.lookup path remoteFiles
                     case remoteFileMaybe of
                         Just remoteFile -> do
@@ -283,6 +284,8 @@ sync' token = do
             --server always win if conflict
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
+            liftIO $ debugLog ("locaFiles " ++ show localFiles)
+
             liftIO $ debugLog ("locaChanges " ++ show localChanges)
             liftIO $ debugLog ("remoteChanges" ++ show remoteChanges)
             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
@@ -294,8 +297,8 @@ sync' token = do
             --let appliedChanges = appliedLocalChanges ++ appliedRemoteChanges
             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
-            let newLocalState = computeNewStateFromChanges previousLocalFiles (localChanges ++ appliedLocalChanges)
-            let newRemoteState = computeNewStateFromChanges previousRemoteFiles (remoteChanges ++ appliedRemoteChanges)
+            let newLocalState = computeNewStateFromChanges previousLocalFiles (appliedLocalChanges `union` localChanges)
+            let newRemoteState = computeNewStateFromChanges previousRemoteFiles (appliedRemoteChanges `union` remoteChanges)
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
 
