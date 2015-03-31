@@ -22,28 +22,37 @@ filePathEq (Dir path1) (Dir path2) = path1 == path2
 filePathEq _ _ = False
 
 fileFromFolderDoc :: Folder -> Document -> File
-fileFromFolderDoc folder document = File (folderName folder `combine` filename document) ((zonedTimeToUTC . createdTime) document)
+fileFromFolderDoc folder document = File (Path (folderName folder `combine` filename document)) ((zonedTimeToUTC . createdTime) document)
 
 dirFromFolder :: Folder -> File
-dirFromFolder folder = Dir $ (addTrailingPathSeparator . folderName) folder
+dirFromFolder = Dir . pathFromFolder
+
+pathFromFolder :: Folder -> Path
+pathFromFolder = Path . addTrailingPathSeparator . folderName
+
+isDir :: Path -> Bool
+isDir = hasTrailingPathSeparator . filePath
+
+isFile :: Path -> Bool
+isFile = not . isDir
 
 --fileFromFilePath :: FilePath -> File
 --fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
 
-data Change = Created  {createdPath  :: Path}
-            | Deleted  {deletedPath  :: Path}
-            | Modified {modifiedP :: File} deriving (Show)
+data Change = Created  {changePath :: Path}
+            | Deleted  {changePath :: Path} deriving (Show, Eq)
+            -- | Modified {changePath :: Path}
 
-instance Eq Change where
-    (Created file1) == (Created file2) = file1 `filePathEq` file2
-    (Deleted file1) == (Deleted file2) = file1 `filePathEq` file2
-    (Modified file1) == (Modified file2) = file1 `filePathEq` file2
-    _ == _ = False
+data AppliedChange = AppliedChange Change File
 
 data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder deriving (Show, Read)
 
+getFile :: RemoteFile -> File
+getFile (RemoteFile file _ _) = file
+getFile (RemoteDir dir _) = dir
+
 --data RemoteChange = RemoteCreated File RemoteFile | RemoteDeleted File RemoteFile deriving (Show)
-data RemoteChange = RemoteChange Change (Maybe RemoteFile) deriving (Show)
+data RemoteChange = RemoteChange Change RemoteFile deriving (Show)
 
 remoteFileFromFolderDoc :: Folder -> Document -> RemoteFile
 remoteFileFromFolderDoc folder document = RemoteFile (fileFromFolderDoc folder document) folder document
@@ -57,18 +66,18 @@ computeChanges now previous =
         created = Set.difference now previous
         deleted = Set.difference previous now
     in
-        fmap Created ((reverse . Set.toAscList) created) ++ fmap Deleted (Set.toAscList deleted)
+        fmap Created ((reverse . Set.toAscList . Set.map path) created) ++ fmap Deleted ((Set.toAscList . Set.map path) deleted)
 
 computeChangesToApply :: [Change] -> [Change] -> [Change]
 computeChangesToApply = (\\)
 
 
-computeNewStateFromChanges :: Set File -> [Change] -> Set File
+computeNewStateFromChanges :: Set File -> [AppliedChange] -> Set File
 computeNewStateFromChanges = foldl applyChange
     where
-        applyChange :: Set File -> Change -> Set File
-        applyChange resultSet (Created file) = Set.insert file resultSet
-        applyChange resultSet (Deleted file) = Set.delete file resultSet
+        applyChange :: Set File -> AppliedChange -> Set File
+        applyChange resultSet (AppliedChange (Created _) file) = Set.insert file resultSet
+        applyChange resultSet (AppliedChange (Deleted _) file) = Set.delete file resultSet
 
-getFileSetFromMap :: Map File RemoteFile -> Set File
-getFileSetFromMap = Map.keysSet
+getFileSetFromMap :: Map Path RemoteFile -> Set File
+getFileSetFromMap = Set.fromList . map getFile . Map.elems

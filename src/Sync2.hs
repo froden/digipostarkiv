@@ -50,7 +50,7 @@ writeSyncState syncFile state = do
     writeFile tempFile (show state)
     renameFile tempFile syncFile
 
-getRemoteState :: ApiAction (Map File RemoteFile)
+getRemoteState :: ApiAction (Map Path RemoteFile)
 getRemoteState = do
     (_, _, _, mbox) <- ask
     let mboxFolders = (DP.folder . DP.folders) mbox
@@ -59,32 +59,34 @@ getRemoteState = do
     let allFolders = Map.unions contents
     return $ Map.union inboxContents allFolders
 
-getInboxContents :: ApiAction (Map File RemoteFile)
+getInboxContents :: ApiAction (Map Path RemoteFile)
 getInboxContents = do
     (manager, aToken, _, mbox) <- ask
     inboxLink <- liftIO $ linkOrException "document_inbox" $ DP.mailboxLinks mbox
     documents <- liftResourceT $ getDocuments aToken manager inboxLink
     let inboxDocuments = filter DP.uploaded (DP.document documents)
-    let dir = Dir "./"
+    let dirPath = Path "./"
+    let dir = Dir dirPath
     uploadLink <- liftIO $ linkOrException "upload_document_to_inbox" $ DP.mailboxLinks mbox
     let folder = DP.Folder "" "" [uploadLink { DP.rel = "upload_document" }] (Just $ DP.Documents inboxDocuments)
     let remoteDir = RemoteDir dir folder
     let files = map (mapFileToRemoteFile folder) inboxDocuments
-    return $ Map.fromList $ (dir, remoteDir) : files
+    return $ Map.fromList $ (dirPath, remoteDir) : files
 
-getFolderContents :: DP.Folder -> ApiAction (Map File RemoteFile)
+mapFileToRemoteFile :: DP.Folder -> DP.Document -> (Path, RemoteFile)
+mapFileToRemoteFile fldr doc = let file = fileFromFolderDoc fldr doc
+                               in (File2.path file, RemoteFile file fldr doc)
+
+getFolderContents :: DP.Folder -> ApiAction (Map Path RemoteFile)
 getFolderContents folder = do
     (manager, aToken, _, _) <- ask
     folderLink <- liftIO $ linkOrException "self" $ DP.folderLinks folder
     fullFolder <- liftResourceT $ getFolder aToken manager folderLink
     let folderDocuments = filter DP.uploaded (DP.documentInFolder fullFolder)
-    let dir = (dirFromFolder folder, remoteDirFromFolder folder)
+    let dir = (pathFromFolder folder, remoteDirFromFolder folder)
     let files = map (mapFileToRemoteFile folder) folderDocuments
     return $ Map.fromList (dir : files)
 
-mapFileToRemoteFile :: DP.Folder -> DP.Document -> (File, RemoteFile)
-mapFileToRemoteFile fldr doc = let file = fileFromFolderDoc fldr doc
-                               in (file, RemoteFile file fldr doc)
 
 getDirContents :: FilePath -> IO [FilePath]
 getDirContents dirPath = do
@@ -104,9 +106,9 @@ getLocalState syncDirPath = Set.insert (Dir "./") <$> findFilesRecursive syncDir
                 modificationTime <- getModificationTime subPath
                 if isDirectory
                     then findFilesRecursive subPath
-                    else return $ Set.singleton $ File (relativeToSyncDir subPath) modificationTime
+                    else return $ Set.singleton $ File (Path $ relativeToSyncDir subPath) modificationTime
             let contentSet = Set.unions content
-            let dir = Dir $ addTrailingPathSeparator (relativeToSyncDir dirPath)
+            let dir = Dir . Path $ addTrailingPathSeparator (relativeToSyncDir dirPath)
             return $ if File2.path dir == "./" then contentSet else Set.insert dir contentSet
 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
@@ -117,35 +119,37 @@ initLocalState = do
     localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
 
-applyChangesLocal :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
+applyChangesLocal :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [AppliedChange]
 applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
     where
         absoluteTo = combine syncDir
-        applyChange :: Change -> ApiAction (Maybe Change)
-        applyChange currentChange@(Created file) =
+        applyChange :: Change -> ApiAction (Maybe AppliedChange)
+        applyChange currentChange@(Created path) =
             let
-                absoluteTargetFile = absoluteTo (File2.path file)
-                remoteFile = Map.lookup file remoteFiles
+                absoluteTargetFile = absoluteTo (filePath path)
+                remoteFile = Map.lookup path remoteFiles
             in
                 case remoteFile of
                     Just r -> do
                         res <- try (download r absoluteTargetFile) :: ApiAction (Either ApiException ())
                         if isRight res then do
                             newFileModified <- liftIO $ getModificationTime absoluteTargetFile
-                            case file of
-                                (File _ _) -> return $ Just currentChange { createdFile = file { modifiedTime = newFileModified }}
-                                (Dir _) -> return $ Just currentChange
+                            case r of
+                                RemoteFile {} -> return $ Just (AppliedChange currentChange (File path newFileModified))
+                                RemoteDir {} -> return $ Just (AppliedChange currentChange (Dir path))
                         else
                             return Nothing
-                    Nothing -> error $ "file to download not found: " ++ show file
-        applyChange currentChange@(Deleted file) = do
-            res <- liftIO (try $ deleteLocal (absoluteTo (File2.path file)) :: IO (Either IOException ()))
-            return $ if isRight res then Just currentChange else Nothing
+                    Nothing -> error $ "file to download not found: " ++ show filePath
+        applyChange currentChange@(Deleted path) = do
+            res <- liftIO (try $ deleteLocal syncDir path :: IO (Either IOException File))
+            case res of
+                Right file -> return $ Just (AppliedChange currentChange file)
+                Left e -> liftIO $ printError e >> return Nothing
 
-applyChangesRemote :: FilePath -> Map File RemoteFile -> [Change] -> ApiAction [Change]
+applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [AppliedChange]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
     where
-        applyChanges :: Map File RemoteFile -> [Change] -> ApiAction [Maybe Change]
+        applyChanges :: Map Path RemoteFile -> [Change] -> ApiAction [Maybe AppliedChange]
         applyChanges _ [] = return []
         applyChanges remoteState (headChange:tailChanges) = do
             res <- try (applyChange remoteState headChange) :: ApiAction (Either SomeException (Maybe RemoteChange))
@@ -153,49 +157,50 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 Right remoteChangeMaybe ->
                     case remoteChangeMaybe of
                         --adds newly created folder to remote state in case subsequent upload to that folder
-                        Just (RemoteChange change@(Created file) (Just newFolder@(RemoteDir _ _))) -> do
-                            let newState = Map.insert file newFolder remoteState
+                        Just (RemoteChange change@(Created path) newFolder@(RemoteDir dir _)) -> do
+                            let newState = Map.insert path newFolder remoteState
                             appliedChanges <- applyChanges newState tailChanges
-                            return $ Just change : appliedChanges
-                        Just (RemoteChange change _) -> do
+                            return $ Just (AppliedChange change dir) : appliedChanges
+                        Just (RemoteChange change remoteFile) -> do
                             appliedChanges <- applyChanges remoteState tailChanges
-                            return $ Just change : appliedChanges
+                            return $ Just (AppliedChange change (getFile remoteFile)) : appliedChanges
                         Nothing -> applyChanges remoteState tailChanges
                 Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
-                applyChange :: Map File RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created currentFile@(File filePath _)) = do
+                applyChange :: Map Path RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
+                applyChange remoteFiles currentChange@(Created currentPath@(Path filePath)) = do
                     let parentDirPath = addTrailingPathSeparator . takeDirectory $ filePath
                     let absoluteFilePath = combine syncDir filePath
-                    let parentDirMaybe = Map.lookup (Dir parentDirPath) remoteFiles
+                    let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
                     case parentDirMaybe of
                         Just parentDir -> do
                             upload parentDir absoluteFilePath
-                            RemoteFile file _ _ <- getUploadedDocument parentDir currentFile
+                            uploadedDoc@RemoteFile {} <- getUploadedDocument parentDir currentPath
                             -- return empty document because upload does not return document or link
-                            return $ Just (RemoteChange currentChange {createdFile = file} Nothing)
+                            return $ Just (RemoteChange currentChange uploadedDoc)
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
-                applyChange _ currentChange@(Created currentDir@(Dir dirPath)) = do
-                    let folderName = takeFileName . takeDirectory $ dirPath
-                    (manager, aToken, csrfToken, mbox) <- ask
-                    createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
-                    newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
-                    return $ Just (RemoteChange currentChange (Just $ RemoteDir currentDir newFolder))
-                applyChange remoteFiles currentChange@(Deleted file) = do
-                    let remoteFileMaybe = Map.lookup file remoteFiles
-                    case remoteFileMaybe of
-                        Just remoteFile -> do
-                            deleteRemote remoteFile
-                            return $ Just (RemoteChange currentChange (Just remoteFile))
-                        --assume allready deleted
-                        --Nothing -> return $ Just (RemoteChange currentChange Nothing)
-                        Nothing -> error $ "remote file not found: " ++ show file
+                applyChange remoteFiles currentChange@(Created path@(Path dirPath))
+                    | isDir path = do
+                        let folderName = takeFileName . takeDirectory $ dirPath
+                        (manager, aToken, csrfToken, mbox) <- ask
+                        createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
+                        newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
+                        return $ Just (RemoteChange currentChange (RemoteDir (Dir path) newFolder))
+                    | isFile path = do
+                        let remoteFileMaybe = Map.lookup path remoteFiles
+                        case remoteFileMaybe of
+                            Just remoteFile -> do
+                                deleteRemote remoteFile
+                                return $ Just (RemoteChange currentChange remoteFile)
+                            --assume allready deleted
+                            --Nothing -> return $ Just (RemoteChange currentChange Nothing)
+                            Nothing -> error $ "remote file not found: " ++ show path
 
-getUploadedDocument :: RemoteFile -> File -> ApiAction RemoteFile
-getUploadedDocument (RemoteDir _ parentFolder) file = do
+getUploadedDocument :: RemoteFile -> Path -> ApiAction RemoteFile
+getUploadedDocument (RemoteDir _ parentFolder) path = do
     contents <- getFolderContents parentFolder
-    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup file contents)
+    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup path contents)
 getUploadedDocument d f = error $ "parent dir is file or file is dir:\n" ++ show d ++ "\n" ++ show f
 
 upload :: RemoteFile -> FilePath -> ApiAction ()
@@ -213,16 +218,18 @@ deleteRemote (RemoteDir _ folder) = do
     (manager, aToken, csrf, _) <- ask
     liftResourceT $ deleteFolder aToken manager csrf folder
 
-deleteLocal :: FilePath -> IO ()
-deleteLocal targetFile = do
-    isDir <- doesDirectoryExist targetFile
-    if isDir then
-        removeDirectoryRecursive targetFile `catch` handleExists
-    else
-        removeFile targetFile `catch` handleExists
-    where handleExists e
-              | isDoesNotExistError e = return ()
-              | otherwise = throwIO e
+deleteLocal :: FilePath -> Path -> IO File
+deleteLocal syncDir p@(Path path) = deleteFileOrDir
+    where
+        deleteFileOrDir = do
+            let targetFile = syncDir </> path
+            isDir <- doesDirectoryExist targetFile
+            modified <- getModificationTime targetFile
+            if isDir then
+                removeDirectoryRecursive targetFile
+            else
+                removeFile targetFile
+            return $ File p modified
 
 download :: RemoteFile -> FilePath -> ApiAction ()
 download (RemoteFile _ _ document) targetFile = do
