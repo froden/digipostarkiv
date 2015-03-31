@@ -228,10 +228,10 @@ deleteLocal syncDir p@(Path path) = deleteFileOrDir
             isDir <- doesDirectoryExist targetFile
             modified <- getModificationTime targetFile
             if isDir then
-                removeDirectoryRecursive targetFile
+                removeDirectoryRecursive targetFile >> return (Dir p)
             else
-                removeFile targetFile
-            return $ File p modified
+                removeFile targetFile >> return (File p modified)
+
 
 download :: RemoteFile -> FilePath -> ApiAction ()
 download (RemoteFile _ _ document) targetFile = do
@@ -281,11 +281,9 @@ sync' token = do
             let previousLocalFiles = localSyncState previousState
             let localChanges = computeChanges localFiles previousLocalFiles
             let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-            --server always win if conflict
+            --server always win if conflict TODO: compute changes to apply for local also
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ debugLog ("locaFiles " ++ show localFiles)
-
             liftIO $ debugLog ("locaChanges " ++ show localChanges)
             liftIO $ debugLog ("remoteChanges" ++ show remoteChanges)
             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
