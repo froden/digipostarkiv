@@ -77,12 +77,12 @@ computeChangesToApply :: [Change] -> [Change] -> [Change]
 computeChangesToApply = (\\)
 
 
-computeNewStateFromChanges :: Set File -> [AppliedChange] -> Set File
+computeNewStateFromChanges :: Set File -> [Change] -> Set File
 computeNewStateFromChanges = foldl applyChange
     where
-        applyChange :: Set File -> AppliedChange -> Set File
-        applyChange resultSet (AppliedChange (Created _) file) = Set.insert file resultSet
-        applyChange resultSet (AppliedChange (Deleted _) file) = Set.delete file resultSet
+        applyChange :: Set File -> Change -> Set File
+        applyChange resultSet (Created file) = Set.insert file resultSet
+        applyChange resultSet (Deleted file) = Set.delete file resultSet
 
 getFileSetFromMap :: Map Path RemoteFile -> Set File
 getFileSetFromMap = Set.fromList . map getFile . Map.elems

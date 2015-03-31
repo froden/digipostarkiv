@@ -95,7 +95,7 @@ getDirContents dirPath = do
     where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getLocalState :: FilePath -> IO (Set File)
-getLocalState syncDirPath = Set.insert (Dir "./") <$> findFilesRecursive syncDirPath
+getLocalState syncDirPath = Set.insert (Dir (Path "./")) <$> findFilesRecursive syncDirPath
     where
         relativeToSyncDir = makeRelative syncDirPath
         findFilesRecursive dirPath = do
@@ -108,8 +108,9 @@ getLocalState syncDirPath = Set.insert (Dir "./") <$> findFilesRecursive syncDir
                     then findFilesRecursive subPath
                     else return $ Set.singleton $ File (Path $ relativeToSyncDir subPath) modificationTime
             let contentSet = Set.unions content
-            let dir = Dir . Path $ addTrailingPathSeparator (relativeToSyncDir dirPath)
-            return $ if File2.path dir == "./" then contentSet else Set.insert dir contentSet
+            let filePath = addTrailingPathSeparator (relativeToSyncDir dirPath)
+            let dir = Dir $ Path filePath
+            return $ if filePath == "./" then contentSet else Set.insert dir contentSet
 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
@@ -119,11 +120,11 @@ initLocalState = do
     localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
 
-applyChangesLocal :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [AppliedChange]
+applyChangesLocal :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
     where
         absoluteTo = combine syncDir
-        applyChange :: Change -> ApiAction (Maybe AppliedChange)
+        applyChange :: Change -> ApiAction (Maybe Change)
         applyChange currentChange@(Created file) =
             let
                 path = File2.path file
@@ -136,21 +137,21 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
                         if isRight res then do
                             newFileModified <- liftIO $ getModificationTime absoluteTargetFile
                             case r of
-                                RemoteFile {} -> return $ Just (AppliedChange currentChange (File path newFileModified))
-                                RemoteDir {} -> return $ Just (AppliedChange currentChange (Dir path))
+                                RemoteFile {} -> return $ Just currentChange {file = File path newFileModified}
+                                RemoteDir {} -> return $ Just currentChange {file = Dir path}
                         else
                             return Nothing
-                    Nothing -> error $ "file to download not found: " ++ show filePath
-        applyChange currentChange@(Deleted file) = do
+                    Nothing -> error $ "file to download not found: " ++ show (File2.path file)
+        applyChange (Deleted file) = do
             res <- liftIO (try $ deleteLocal syncDir (File2.path file) :: IO (Either IOException File))
             case res of
-                Right file -> return $ Just (AppliedChange currentChange file)
+                Right file -> return $ Just (Deleted file)
                 Left e -> liftIO $ printError e >> return Nothing
 
-applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [AppliedChange]
+applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
     where
-        applyChanges :: Map Path RemoteFile -> [Change] -> ApiAction [Maybe AppliedChange]
+        applyChanges :: Map Path RemoteFile -> [Change] -> ApiAction [Maybe Change]
         applyChanges _ [] = return []
         applyChanges remoteState (headChange:tailChanges) = do
             res <- try (applyChange remoteState headChange) :: ApiAction (Either SomeException (Maybe RemoteChange))
@@ -158,13 +159,13 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                 Right remoteChangeMaybe ->
                     case remoteChangeMaybe of
                         --adds newly created folder to remote state in case subsequent upload to that folder
-                        Just (RemoteChange change@(Created (Dir path)) newFolder@(RemoteDir dir _)) -> do
+                        Just (RemoteChange (Created (Dir path)) newFolder@(RemoteDir dir _)) -> do
                             let newState = Map.insert path newFolder remoteState
                             appliedChanges <- applyChanges newState tailChanges
-                            return $ Just (AppliedChange change dir) : appliedChanges
+                            return $ Just (Created dir) : appliedChanges
                         Just (RemoteChange change remoteFile) -> do
                             appliedChanges <- applyChanges remoteState tailChanges
-                            return $ Just (AppliedChange change (getFile remoteFile)) : appliedChanges
+                            return $ Just change {file = getFile remoteFile} : appliedChanges
                         Nothing -> applyChanges remoteState tailChanges
                 Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
             where
