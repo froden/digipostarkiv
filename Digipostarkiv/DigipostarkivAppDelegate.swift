@@ -52,9 +52,9 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     
     func sync() {
         if (Sync.isLoggedIn()) {
-            //dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
                 self.detectChangeAndSync()
-            //})
+            })
         } else {
             stopSyncTimer()
             loginWindowController.showOauthLoginPage()
@@ -74,7 +74,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
                 remoteSync = true
                 NSLog("Remote change detected")
             } else if (remoteChangeResult == 1) {
-                loginWindowController.showOauthLoginPage()
+                dispatch_async(dispatch_get_main_queue(), {self.loginWindowController.showOauthLoginPage()})
                 return
             } else if (remoteChangeResult == 99){
                 NSLog("Unhandled syncresult from hsRemoteChange")
@@ -95,7 +95,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         let result = Sync.sync();
         if (result != 0) {
             if (result == 1) {
-                loginWindowController.showOauthLoginPage()
+                dispatch_async(dispatch_get_main_queue(), {self.loginWindowController.showOauthLoginPage()})
             } else {
                 //TODO: give up after n failures?
                 NSLog("Unhandled syncresult: %i", result);
