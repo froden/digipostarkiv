@@ -177,7 +177,6 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                         Just parentDir -> do
                             upload parentDir absoluteFilePath
                             uploadedDoc@RemoteFile {} <- getUploadedDocument parentDir currentPath
-                            -- return empty document because upload does not return document or link
                             return $ Just (RemoteChange currentChange uploadedDoc)
                         Nothing -> error $ "no parent dir: " ++ parentDirPath
                 --For now Digipost only support one level of folders
@@ -199,8 +198,8 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                         Nothing -> error $ "remote file not found: " ++ show deletedPath
 
 getUploadedDocument :: RemoteFile -> Path -> ApiAction RemoteFile
-getUploadedDocument (RemoteDir _ parentFolder) docPath = do
-    contents <- getFolderContents parentFolder
+getUploadedDocument (RemoteDir (Dir dirPath) parentFolder) docPath = do
+    contents <- if dirPath == Path "./" then getInboxContents else getFolderContents parentFolder
     return $ fromMaybe (error "expected to find uploaded document") (Map.lookup docPath contents)
 getUploadedDocument d f = error $ "parent dir is file or file is dir:\n" ++ show d ++ "\n" ++ show f
 
