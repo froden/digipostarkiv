@@ -1,6 +1,22 @@
 # Digipostarkiv
 
-Simple work in progress file sync client for files uploaded to Digipost
+Desktop application to syncronize files to Digipost.
+
+### Features
+
+* Two way sync between local folder (Digipostarkiv) and Digipost (https://www.digipost.no)
+* Oauth2 login for Digipost
+* OSX status bar application GUI
+* Detects changes to files
+* Suports Digipost folders
+* Will only sync documents marked as origin="uploaded"
+* Checks for local changes every 10 seconds, server every minute.
+
+### TODO
+
+* Constantly monitor local files instead of polling
+* Consider database instead of flat file
+* Show recentlyg synced files in GUI
 
 ### Getting started
 
@@ -9,17 +25,5 @@ Simple work in progress file sync client for files uploaded to Digipost
 * cabal configure
 * cabal build
 * open xcode project
+* Set GHC_VERSION variable
 * build and run
-
-### Current status
-
-* OSX status bar application GUI
-* Oauth2 login for Digipost
-* Two way sync between local folder (Digipostarkiv) and Digipost archive
-* Suports Digipost folders
-* Will only sync documents marked as origin="uploaded"
-* Uses .sync and a three way diff to detect deleted files
-* Checks for local changes every 10 seconds, server every minute.
-
-### TODO
-* Handle updated files
