@@ -279,18 +279,15 @@ sync' token = do
             let previousLocalFiles = localSyncState previousState
             let localChanges = computeChanges localFiles previousLocalFiles
             let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-            --server always win if conflict TODO: compute changes to apply for local also
+            --server always win if conflict TODO: better handle conflicts
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ debugLog ("locaChanges " ++ show localChanges)
+            liftIO $ debugLog ("localChanges " ++ show localChanges)
             liftIO $ debugLog ("remoteChanges" ++ show remoteChanges)
             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
---             let appliedLocalChanges  = [] :: [Change]
---             let appliedRemoteChanges = [] :: [Change]
-            --let appliedChanges = appliedLocalChanges ++ appliedRemoteChanges
             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
             let newLocalState = computeNewStateFromChanges previousLocalFiles (appliedLocalChanges `union` localChanges)
