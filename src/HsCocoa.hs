@@ -9,7 +9,7 @@ import Data.Either
 import Control.Exception
 
 import qualified Oauth as O
-import Sync2
+import Sync
 import Http
 import Error
 

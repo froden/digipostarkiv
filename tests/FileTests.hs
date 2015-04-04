@@ -3,26 +3,26 @@ module FileTests where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Applicative
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List
+import Data.Time.Clock.POSIX
 
-import File2
+import File
 
 fileTests :: TestTree
 fileTests = testGroup "File tests"
   [ testCase "changes should be sorted" $
         let
-            localFiles = Set.fromList [Dir "archive/", File "archive/file1"]
-            localFilesPrevious = Set.fromList [Dir "money/", File "money/file2"] :: Set File
+            timestamp = posixSecondsToUTCTime 10
+            localFiles = Set.fromList [Dir (Path "archive/"), File (Path "archive/file1") timestamp]
+            localFilesPrevious = Set.fromList [Dir (Path "money/"), File (Path "money/file2") timestamp] :: Set File
             remoteFiles = Set.fromList [] :: Set File
-            remoteFilesPrevious = Set.fromList [Dir "money/"] :: Set File
-            expectedLocalChanges = [Created (Dir "archive/"), Created (File "archive/file1"), Deleted (File "money/file2"), Deleted (Dir "money/")]
-            expectedRemoteChanges = [Deleted (Dir "money/")]
+            remoteFilesPrevious = Set.fromList [Dir (Path "money/")] :: Set File
+            expectedLocalChanges = [Deleted (File (Path "money/file2") timestamp), Deleted (Dir (Path "money/")), Created (Dir (Path "archive/")), Created (File (Path "archive/file1") timestamp)]
+            expectedRemoteChanges = [Deleted (Dir (Path "money/"))]
             actualLocalChanges = computeChanges localFiles localFilesPrevious
             actualRemoteChanges = computeChanges remoteFiles remoteFilesPrevious
-            changesToApplyToRemote = [Created (Dir "archive/"), Created (File "archive/file1"), Deleted (File "money/file2")]
+            changesToApplyToRemote = [Deleted (File (Path "money/file2") timestamp), Created (Dir (Path "archive/")), Created (File (Path "archive/file1") timestamp)]
             changesToApplyToLocal = []
         in do
             assertEqual "" expectedLocalChanges actualLocalChanges
@@ -32,10 +32,11 @@ fileTests = testGroup "File tests"
 
   , testCase "comput new state" $
         let
-            localFiles = Set.fromList [Dir "archive/", File "archive/file1", File "money/file2"]
-            changes = [Created (Dir "archive/"), Created (File "archive/file1"), Deleted (File "money/file2"), Deleted (Dir "money/")]
-            expectedNewState = Set.fromList [Dir "archive/", File "archive/file1"]
+            timestamp = posixSecondsToUTCTime 10
+            localFiles = Set.fromList [Dir (Path "archive/"), File (Path "archive/file1") timestamp, File (Path "money/file2") timestamp]
+            changes = [Created (Dir (Path "archive/")), Created (File (Path "archive/file1") timestamp), Deleted (File (Path "money/file2") timestamp), Deleted (Dir (Path "money/"))]
+            expectedNewState = Set.fromList [Dir (Path "archive/"), File (Path "archive/file1") timestamp]
             computedNewState = computeNewStateFromChanges localFiles changes
-        in do
+        in
             assertEqual "" expectedNewState computedNewState
   ]

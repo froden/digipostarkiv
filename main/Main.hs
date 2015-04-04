@@ -1,7 +1,7 @@
 
 module Main where
 
-import Sync2
+import Sync
 -- import Control.Concurrent
 
 main :: IO ()

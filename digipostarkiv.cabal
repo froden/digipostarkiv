@@ -40,7 +40,7 @@ library
                        containers,
                        lifted-base
   hs-source-dirs:      src
-  exposed-modules:     HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File, File2, Sync2
+  exposed-modules:     HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File
   ghc-options:         -Wall -staticlib -threaded
   default-language:    Haskell2010
 
@@ -69,4 +69,5 @@ test-suite test
         tasty-smallcheck >= 0.8,
         tasty-quickcheck >= 0.8,
         containers,
-        digipostarkiv
+        digipostarkiv,
+        time
