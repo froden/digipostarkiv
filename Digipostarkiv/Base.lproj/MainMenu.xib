@@ -689,6 +689,12 @@
                         <action selector="openInFinder:" target="Voe-Tx-rLC" id="2xL-53-Yew"/>
                     </connections>
                 </menuItem>
+                <menuItem title="Gå til www.digipost.no" id="Nnp-bh-QRH">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="openDigipostInBrowser:" target="Voe-Tx-rLC" id="vMF-rb-yXM"/>
+                    </connections>
+                </menuItem>
                 <menuItem isSeparatorItem="YES" id="KUI-il-jo5"/>
                 <menuItem title="Synkroniser nå" id="HT6-xw-0TF">
                     <modifierMask key="keyEquivalentModifierMask"/>

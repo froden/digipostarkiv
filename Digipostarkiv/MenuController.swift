@@ -55,6 +55,10 @@ class MenuController: NSObject {
             loginWindowController.showOauthLoginPage()
         }
     }
+    @IBAction func openDigipostInBrowser(sender: AnyObject) {
+        let digipostUrl = NSURL(string: "https://www.digipost.no/app/#/")
+        NSWorkspace.sharedWorkspace().openURL(digipostUrl!)
+    }
     
     @IBAction func startSync(sender: NSMenu) {
         appDelegate.startSyncTimer()
