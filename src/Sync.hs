@@ -310,8 +310,8 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
-debugLog = putStrLn
--- debugLog _ = return ()
+-- debugLog = putStrLn
+debugLog _ = return ()
 
 printError :: Exception a => a -> IO ()
 printError e = do

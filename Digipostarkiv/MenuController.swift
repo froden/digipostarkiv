@@ -56,23 +56,22 @@ class MenuController: NSObject {
         }
     }
     
-    @IBAction func logIn(sender: NSMenu) {
-        loginWindowController.showOauthLoginPage()
+    @IBAction func startSync(sender: NSMenu) {
+        appDelegate.startSyncTimer()
     }
     
-    @IBAction func logOut(sender: NSMenu) {
+    @IBAction func stopSync(sender: AnyObject) {
         appDelegate.stopSyncTimer()
-        Sync.logout()
     }
     
     override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
-        let loggedIn = Sync.isLoggedIn()
-        if (menuItem.action == "logIn:") {
-            menuItem.hidden = loggedIn
-            return !loggedIn
-        } else if (menuItem.action == "logOut:") {
-            menuItem.hidden = !loggedIn
-            return loggedIn
+        let started = appDelegate.isStarted()
+        if (menuItem.action == "startSync:") {
+            menuItem.hidden = started
+            return !started
+        } else if (menuItem.action == "stopSync:") {
+            menuItem.hidden = !started
+            return started
         } else {
             return true
         }

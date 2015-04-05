@@ -34,8 +34,12 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         startSyncTimer()
     }
     
+    func isStarted() -> Bool {
+        return syncTimer != nil && syncTimer!.valid
+    }
+    
     func startSyncTimer() {
-        if (syncTimer == nil || !syncTimer!.valid) {
+        if (!isStarted()) {
             NSLog("starting sync timer")
             syncTimer = NSTimer.scheduledTimerWithTimeInterval(10.0, target: self, selector: "sync", userInfo: nil, repeats: true)
         }
@@ -43,8 +47,8 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func stopSyncTimer() {
-        NSLog("stopping sync timer")
-        if (syncTimer != nil && syncTimer!.valid) {
+        if (isStarted()) {
+            NSLog("stopping sync timer")
             syncTimer!.invalidate()
             syncTimer = nil
         }

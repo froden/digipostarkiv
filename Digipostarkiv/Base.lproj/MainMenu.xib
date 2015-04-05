@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6254" systemVersion="14C109" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6751" systemVersion="14C1514" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6254"/>
-        <plugIn identifier="com.apple.WebKitIBPlugin" version="6254"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6751"/>
+        <plugIn identifier="com.apple.WebKitIBPlugin" version="6751"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -689,24 +689,26 @@
                         <action selector="openInFinder:" target="Voe-Tx-rLC" id="2xL-53-Yew"/>
                     </connections>
                 </menuItem>
+                <menuItem isSeparatorItem="YES" id="KUI-il-jo5"/>
                 <menuItem title="Synkroniser nå" id="HT6-xw-0TF">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="manualSync:" target="Voe-Tx-rLC" id="Ldf-qj-F1g"/>
                     </connections>
                 </menuItem>
-                <menuItem title="Logg inn" id="Ceh-0h-cdn">
+                <menuItem title="Start synkronisering" id="Ceh-0h-cdn">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="logIn:" target="Voe-Tx-rLC" id="z3J-do-OZU"/>
+                        <action selector="startSync:" target="Voe-Tx-rLC" id="kbg-Jx-H1V"/>
                     </connections>
                 </menuItem>
-                <menuItem title="Logg ut" id="CzG-yS-Q7s">
+                <menuItem title="Stopp synkronisering" id="CzG-yS-Q7s">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="logOut:" target="Voe-Tx-rLC" id="Y6I-xy-DFW"/>
+                        <action selector="stopSync:" target="Voe-Tx-rLC" id="yHD-zW-NHO"/>
                     </connections>
                 </menuItem>
+                <menuItem isSeparatorItem="YES" id="Fek-gW-DxR"/>
                 <menuItem title="Avslutt" id="AcJ-EO-Ofc">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
@@ -720,7 +722,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="456" y="77" width="800" height="800"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1177"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <view key="contentView" id="UBU-PQ-1OJ">
                 <rect key="frame" x="0.0" y="0.0" width="800" height="800"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
