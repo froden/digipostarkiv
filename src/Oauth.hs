@@ -17,6 +17,7 @@ import Network.OAuth.OAuth2
 
 import Error
 import qualified Http as HTTP
+import DigipostKey
 
 
 type URL = BS.ByteString
@@ -77,14 +78,6 @@ removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile
 
 accessTokenFile :: FilePath -> FilePath
 accessTokenFile userHome = combine userHome ".digipostarkiv"
-
-digigpostKey :: OAuth2
-digigpostKey = OAuth2 { oauthClientId = "5f2b683e74a84b38aea54ee9d0080276"
-                      , oauthClientSecret = "gceQSc6Gw5g4IaJjg2pWAkNmxQcydkfOY3kHH59t1gQ"
-                      , oauthCallback = Just "digipost://oauth"
-                      , oauthOAuthorizeEndpoint = "https://www.digipost.no/post/api/oauth/authorize/new"
-                      , oauthAccessTokenEndpoint = "https://www.digipost.no/post/api/oauth/accesstoken"
-                      }
 
 sToBS :: String -> BS.ByteString
 sToBS = T.encodeUtf8 . T.pack
