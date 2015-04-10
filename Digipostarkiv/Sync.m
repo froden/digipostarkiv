@@ -17,8 +17,8 @@
     return [NSString stringWithFormat:@"%s" , cAuthUrl];
 }
 
-+(NSString*)getSyncDir {
-    char *syncDir = hsGetSyncDir();
++(NSString*)initSync {
+    char *syncDir = hsInitSync();
     return [NSString stringWithFormat:@"%s" , syncDir];
 }
 

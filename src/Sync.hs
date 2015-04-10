@@ -18,8 +18,10 @@ import Data.Maybe
 import Control.Exception.Lifted
 import Text.Read (readMaybe)
 import Data.Either
-import Data.Time
-import System.Locale
+import System.Log.Logger
+import System.Log.Handler.Simple
+import System.Log.Handler (setFormatter)
+import System.Log.Formatter
 
 import Api
 import qualified ApiTypes as DP
@@ -114,7 +116,7 @@ getLocalState syncDirPath = Set.insert (Dir (Path "./")) <$> findFilesRecursive 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
     syncDir <- getOrCreateSyncDir
-    let syncFile = getSyncFile syncDir
+    syncFile <- getSyncFile
     previousState <- readSyncState syncFile
     localState <- getLocalState syncDir
     return (syncDir, syncFile, previousState, localState)
@@ -145,7 +147,7 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
             res <- liftIO (try $ deleteLocal syncDir (File.path file) :: IO (Either IOException File))
             case res of
                 Right deletedFile -> return $ Just (Deleted deletedFile)
-                Left e -> liftIO $ printError e >> return Nothing
+                Left e -> liftIO $ warningM "Sync.applyChangesLocal" (show e) >> return Nothing
 
 applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
@@ -166,7 +168,7 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                             appliedChanges <- applyChanges remoteState tailChanges
                             return $ Just change {changedFile = getFile remoteFile} : appliedChanges
                         Nothing -> applyChanges remoteState tailChanges
-                Left exception -> liftIO (printError exception) >> applyChanges remoteState tailChanges
+                Left exception -> liftIO (warningM "Sync.applyChangesRemote" $ show exception) >> applyChanges remoteState tailChanges
             where
                 applyChange :: Map Path RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
                 applyChange remoteFiles currentChange@(Created (File currentPath@(Path relativeFilePath) _)) = do
@@ -244,7 +246,7 @@ checkLocalChange = do
     (_, _, previousState, localFiles) <- initLocalState
     let previousLocalFiles = localSyncState previousState
     let localChanges = computeChanges localFiles previousLocalFiles
-    unless (null localChanges) (liftIO $ debugLog ("localChanges:\n" ++ formatList localChanges))
+    unless (null localChanges) (liftIO $ infoM "Sync.checkLocalChange" ("localChanges:\n" ++ formatList localChanges))
     return $ not (null localChanges)
 
 checkRemoteChange :: IO Bool
@@ -260,7 +262,7 @@ checkRemoteChange' token = do
         let remoteFiles = getFileSetFromMap remoteState
         let previousRemoteFiles = remoteSyncState previousState
         let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-        unless (null remoteChanges) (liftIO $ debugLog ("remoteChanges:\n" ++ formatList remoteChanges))
+        unless (null remoteChanges) (liftIO $ infoM "Sync.checkRemoteChange" ("remoteChanges:\n" ++ formatList remoteChanges))
         return $ not (null remoteChanges)
 
 sync :: IO ()
@@ -268,6 +270,7 @@ sync = loadAccessToken >>= handleTokenRefresh sync'
 
 sync' :: AccessToken -> IO ()
 sync' token = do
+    infoM "Sync.sync" "Syncing"
     (syncDir, syncFile, previousState, localFiles) <- initLocalState
     runResourceT $ do
         manager <- liftIO $ newManager conduitManagerSettings
@@ -282,8 +285,8 @@ sync' token = do
             --server always win if conflict TODO: better handle conflicts
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ debugLog ("localChanges:\n" ++ formatList localChanges)
-            liftIO $ debugLog ("remoteChanges:\n" ++ formatList remoteChanges)
+            liftIO $ infoM "Sync.sync" ("localChanges:\n" ++ formatList localChanges)
+            liftIO $ infoM "Sync.sync" ("remoteChanges:\n" ++ formatList remoteChanges)
 --             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
 --             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
@@ -294,6 +297,15 @@ sync' token = do
             let newRemoteState = computeNewStateFromChanges previousRemoteFiles (appliedRemoteChanges `union` remoteChanges)
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
+
+initLogging :: IO ()
+initLogging = do
+    metaDir <- getMetaDir
+    let logFile = combine metaDir "log"
+    h <- fileHandler logFile DEBUG >>= \lh -> return $
+            setFormatter lh (simpleLogFormatter "[$time : $loggername : $prio] $msg")
+    updateGlobalLogger "" (addHandler h)
+    updateGlobalLogger "" (setLevel INFO)
 
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do
@@ -306,21 +318,21 @@ getOrCreateSyncDir = do
     createDirectoryIfMissing True syncDir
     return syncDir
 
-getSyncFile :: FilePath -> FilePath
-getSyncFile syncDir = combine syncDir ".sync"
+getMetaDir :: IO FilePath
+getMetaDir = do
+    syncDir <- getOrCreateSyncDir
+    let metaDir = syncDir </> ".sync"
+    metaIsFile <- doesFileExist metaDir
+    when metaIsFile $ removeFile metaDir --to upgrade from older versions
+    createDirectoryIfMissing True metaDir
+    return metaDir
+
+getSyncFile :: IO FilePath
+getSyncFile = (</> "db") <$> getMetaDir
 
 debugLog :: String -> IO ()
 debugLog = putStrLn
 -- debugLog _ = return ()
-
-printError :: Exception a => a -> IO ()
-printError e = do
-        let dateFormat = iso8601DateFormat (Just "%H:%M:%S")
-        timestamp <- formatTime defaultTimeLocale dateFormat <$> getCurrentTime
-        let msg = timestamp ++ " " ++ show e
-        print msg
-        logFile <- fmap (</> ".synclog") getUserSyncDir
-        appendFile logFile $ msg ++ "\n"
 
 formatList :: Show a => [a] -> String
 formatList = unlines . map show

@@ -7,13 +7,14 @@ import Foreign.C
 import Data.ByteString.Char8 (unpack)
 import Data.Either
 import Control.Exception
+import System.Log.Logger
 
 import qualified Oauth as O
 import Sync
 import Http
 import Error
 
-foreign export ccall hsGetSyncDir :: IO CString
+foreign export ccall hsInitSync :: IO CString
 foreign export ccall hsAuthUrl :: CString -> IO CString
 foreign export ccall hsAccessToken :: CString -> CString -> IO CInt
 foreign export ccall hsSync :: IO CInt
@@ -22,12 +23,13 @@ foreign export ccall hsLoggedIn :: IO Bool
 foreign export ccall hsLocalChanges :: IO Bool
 foreign export ccall hsRemoteChanges :: IO CInt
 
-hsGetSyncDir :: IO CString
-hsGetSyncDir = do
+hsInitSync :: IO CString
+hsInitSync = do
+        initLogging
         res <- tryAny getOrCreateSyncDir
         case res of
                 Right dir -> newCAString dir
-                Left e -> printError e >> newCString ""
+                Left e -> warningM "HsCocoa.hsInitSync" (show e) >> newCString ""
 
 hsAuthUrl :: CString -> IO CString
 hsAuthUrl s = do
@@ -42,7 +44,7 @@ hsAccessToken s c = do
         case result of
                 Right token -> O.storeAccessToken token >> return 0
                 Left NotAuthenticated -> return 1
-                Left e -> printError e >> return 99
+                Left e -> warningM "HsCocoa.hsAccessToken" (show e) >> return 99
 
 hsSync :: IO CInt
 hsSync = do
@@ -50,7 +52,7 @@ hsSync = do
         case res of
                 Right _ -> return 0
                 Left NotAuthenticated -> return 1
-                Left e -> printError e >> return 99
+                Left e -> warningM "HsCocoa.hsSync" (show e) >> return 99
 
 hsLogout :: IO ()
 hsLogout = O.removeAccessToken
@@ -68,7 +70,7 @@ hsRemoteChanges = do
                   Right True -> return 0
                   Right False -> return (-1)
                   Left NotAuthenticated -> return 1
-                  Left e -> printError e >> return 99
+                  Left e -> warningM "HsCocoa.hsRemoteChanges" (show e) >> return 99
 
 tryAny :: IO a -> IO (Either SyncError a)
 tryAny action = do
