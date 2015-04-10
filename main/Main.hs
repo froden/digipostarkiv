@@ -10,7 +10,7 @@ main = loop
 
 loop :: IO ()
 loop = do
-    putStrLn "sync"
+    initLogging
     sync
     --threadDelay 10000000
     --loop
