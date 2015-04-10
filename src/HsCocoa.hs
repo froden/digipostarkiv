@@ -13,6 +13,7 @@ import Sync
 import Http
 import Error
 
+foreign export ccall hsGetSyncDir :: IO CString
 foreign export ccall hsAuthUrl :: CString -> IO CString
 foreign export ccall hsAccessToken :: CString -> CString -> IO CInt
 foreign export ccall hsSync :: IO CInt
@@ -21,6 +22,12 @@ foreign export ccall hsLoggedIn :: IO Bool
 foreign export ccall hsLocalChanges :: IO Bool
 foreign export ccall hsRemoteChanges :: IO CInt
 
+hsGetSyncDir :: IO CString
+hsGetSyncDir = do
+        res <- tryAny getOrCreateSyncDir
+        case res of
+                Right dir -> newCAString dir
+                Left e -> printError e >> newCString ""
 
 hsAuthUrl :: CString -> IO CString
 hsAuthUrl s = do

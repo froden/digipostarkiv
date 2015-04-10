@@ -31,6 +31,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(notification: NSNotification) {
+        Sync.getSyncDir()
         startSyncTimer()
     }
     

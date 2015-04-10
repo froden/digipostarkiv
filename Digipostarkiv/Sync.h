@@ -14,6 +14,7 @@
 @interface Sync : NSObject 
 
 +(NSString*)oauthUrl: (NSString*)state;
++(NSString*)getSyncDir;
 +(void)logout;
 +(int)getAccessToken: (NSString*)state :(NSString*)authCode;
 +(BOOL) isLoggedIn;

@@ -17,6 +17,11 @@
     return [NSString stringWithFormat:@"%s" , cAuthUrl];
 }
 
++(NSString*)getSyncDir {
+    char *syncDir = hsGetSyncDir();
+    return [NSString stringWithFormat:@"%s" , syncDir];
+}
+
 +(void)logout {
     hsLogout();
 }
