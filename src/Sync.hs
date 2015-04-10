@@ -244,7 +244,7 @@ checkLocalChange = do
     (_, _, previousState, localFiles) <- initLocalState
     let previousLocalFiles = localSyncState previousState
     let localChanges = computeChanges localFiles previousLocalFiles
-    liftIO $ debugLog ("localChanges " ++ show localChanges)
+    unless (null localChanges) (liftIO $ debugLog ("localChanges:\n" ++ formatList localChanges))
     return $ not (null localChanges)
 
 checkRemoteChange :: IO Bool
@@ -260,7 +260,7 @@ checkRemoteChange' token = do
         let remoteFiles = getFileSetFromMap remoteState
         let previousRemoteFiles = remoteSyncState previousState
         let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-        liftIO $ debugLog ("remoteChange " ++ show remoteChanges)
+        unless (null remoteChanges) (liftIO $ debugLog ("remoteChanges:\n" ++ formatList remoteChanges))
         return $ not (null remoteChanges)
 
 sync :: IO ()
@@ -282,14 +282,14 @@ sync' token = do
             --server always win if conflict TODO: better handle conflicts
             let changesToApplyLocal = remoteChanges
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ debugLog ("localChanges " ++ show localChanges)
-            liftIO $ debugLog ("remoteChanges" ++ show remoteChanges)
-            liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
-            liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
+            liftIO $ debugLog ("localChanges:\n" ++ formatList localChanges)
+            liftIO $ debugLog ("remoteChanges:\n" ++ formatList remoteChanges)
+--             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
+--             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
-            liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
-            liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
+--             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
+--             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
             let newLocalState = computeNewStateFromChanges previousLocalFiles (appliedLocalChanges `union` localChanges)
             let newRemoteState = computeNewStateFromChanges previousRemoteFiles (appliedRemoteChanges `union` remoteChanges)
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
@@ -310,8 +310,8 @@ getSyncFile :: FilePath -> FilePath
 getSyncFile syncDir = combine syncDir ".sync"
 
 debugLog :: String -> IO ()
--- debugLog = putStrLn
-debugLog _ = return ()
+debugLog = putStrLn
+-- debugLog _ = return ()
 
 printError :: Exception a => a -> IO ()
 printError e = do
@@ -321,3 +321,6 @@ printError e = do
         print msg
         logFile <- fmap (</> ".synclog") getUserSyncDir
         appendFile logFile $ msg ++ "\n"
+
+formatList :: Show a => [a] -> String
+formatList = unlines . map show

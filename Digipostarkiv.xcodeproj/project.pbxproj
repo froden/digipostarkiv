@@ -356,7 +356,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.3;
+				GHC_VERSION = 7.8.4;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
@@ -388,7 +388,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.3;
+				GHC_VERSION = 7.8.4;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (

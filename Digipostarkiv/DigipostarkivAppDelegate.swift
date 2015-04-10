@@ -115,7 +115,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         let authCode = url.flatMap(parseCode)
         
         if let code = authCode {
-            let result = Sync.getAccessToken("state", code)
+            let result = Sync.getAccessToken("state", code as String)
             if (result == 0) {
                 startSyncTimer()
                 loginWindowController.closeOauthLoginPage()
