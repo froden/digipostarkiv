@@ -155,50 +155,57 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
     where
         applyChanges :: Map Path RemoteFile -> [Change] -> ApiAction [Maybe Change]
         applyChanges _ [] = return []
-        applyChanges remoteState (headChange:tailChanges) = do
-            res <- try (applyChange remoteState headChange) :: ApiAction (Either SomeException (Maybe RemoteChange))
-            case res of
-                Right remoteChangeMaybe ->
-                    case remoteChangeMaybe of
-                        --adds newly created folder to remote state in case subsequent upload to that folder
-                        Just (RemoteChange (Created (Dir createdPath)) newFolder@(RemoteDir dir _)) -> do
-                            let newState = Map.insert createdPath newFolder remoteState
-                            appliedChanges <- applyChanges newState tailChanges
-                            return $ Just (Created dir) : appliedChanges
-                        Just (RemoteChange change remoteFile) -> do
-                            appliedChanges <- applyChanges remoteState tailChanges
-                            return $ Just change {changedFile = getFile remoteFile} : appliedChanges
-                        Nothing -> applyChanges remoteState tailChanges
-                Left exception -> liftIO (warningM "Sync.applyChangesRemote" $ show exception) >> applyChanges remoteState tailChanges
-            where
-                applyChange :: Map Path RemoteFile -> Change -> ApiAction (Maybe RemoteChange)
-                applyChange remoteFiles currentChange@(Created (File currentPath@(Path relativeFilePath) _)) = do
-                    let parentDirPath = addTrailingPathSeparator . takeDirectory $ relativeFilePath
-                    let absoluteFilePath = syncDir </> relativeFilePath
-                    let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
-                    case parentDirMaybe of
-                        Just parentDir -> do
-                            upload parentDir absoluteFilePath
-                            uploadedDoc@RemoteFile {} <- getUploadedDocument parentDir currentPath
-                            return $ Just (RemoteChange currentChange uploadedDoc)
-                        Nothing -> error $ "no parent dir: " ++ parentDirPath
-                --For now Digipost only support one level of folders
-                applyChange _ currentChange@(Created (Dir (Path dirPath))) = do
-                    let folderName = takeFileName . takeDirectory $ dirPath
-                    (manager, aToken, csrfToken, mbox) <- ask
-                    createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
-                    newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
-                    return $ Just (RemoteChange currentChange (RemoteDir (Dir (Path dirPath)) newFolder))
-                applyChange remoteFiles currentChange@(Deleted file) = do
-                    let deletedPath = File.path file
-                    let remoteFileMaybe = Map.lookup deletedPath remoteFiles
-                    case remoteFileMaybe of
-                        Just remoteFile -> do
-                            deleteRemote remoteFile
-                            return $ Just (RemoteChange currentChange remoteFile)
-                        --assume allready deleted
-                        --Nothing -> return $ Just (RemoteChange currentChange Nothing)
-                        Nothing -> error $ "remote file not found: " ++ show deletedPath
+        applyChanges remoteState (headChange:tailChanges) =
+                case headChange of
+                    Created (Dir createdPath) -> do
+                        res <- tryWithLogging $ applyCreatedDirToRemote createdPath
+                        let appliedHead = fmap fst res
+                        let newFolder = fmap snd res
+                        let newState = case newFolder of
+                                            Just nf -> Map.insert createdPath nf remoteState
+                                            Nothing -> remoteState
+                        appliedTail <- applyChanges newState tailChanges
+                        return $ appliedHead : appliedTail
+                    Created (File createdPath _) -> do
+                        appliedHead <- tryWithLogging $ applyCreatedFileToRemote syncDir remoteState createdPath
+                        appliedTail <- applyChanges remoteState tailChanges
+                        return $ appliedHead : appliedTail
+                    Deleted file -> do
+                        appliedHead <- tryWithLogging $ applyDeletedToRemote remoteState file
+                        appliedTail <- applyChanges remoteState tailChanges
+                        return $ appliedHead : appliedTail
+
+applyCreatedFileToRemote :: FilePath -> Map Path RemoteFile -> Path -> ApiAction Change
+applyCreatedFileToRemote syncDir remoteFiles currentPath@(Path relativeFilePath) = do
+    let parentDirPath = addTrailingPathSeparator . takeDirectory $ relativeFilePath
+    let absoluteFilePath = syncDir </> relativeFilePath
+    let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
+    case parentDirMaybe of
+        Just parentDir -> do
+            upload parentDir absoluteFilePath
+            (RemoteFile file _ _) <- getUploadedDocument parentDir currentPath
+            return $ Created file
+        Nothing -> error $ "no parent dir: " ++ parentDirPath
+
+applyCreatedDirToRemote ::Path -> ApiAction (Change, RemoteFile)
+applyCreatedDirToRemote dirPath = do
+    --For now Digipost only support one level of folders
+    let folderName = takeFileName . takeDirectory . filePath $ dirPath
+    (manager, aToken, csrfToken, mbox) <- ask
+    createFolderLink <- liftIO $ linkOrException "create_folder" $ DP.mailboxLinks mbox
+    newFolder <- liftResourceT $ createFolder aToken manager createFolderLink csrfToken folderName
+    let dir = Dir dirPath
+    return (Created dir, RemoteDir dir newFolder)
+
+applyDeletedToRemote :: Map Path RemoteFile -> File -> ApiAction Change
+applyDeletedToRemote remoteFiles file = do
+    let deletedPath = File.path file
+    let remoteFileMaybe = Map.lookup deletedPath remoteFiles
+    case remoteFileMaybe of
+        Just remoteFile -> do
+            deleteRemote remoteFile
+            return $ Deleted (getFile remoteFile)
+        Nothing -> error $ "remote file not found: " ++ show deletedPath
 
 getUploadedDocument :: RemoteFile -> Path -> ApiAction RemoteFile
 getUploadedDocument (RemoteDir (Dir dirPath) parentFolder) docPath = do
@@ -297,6 +304,7 @@ sync' token = do
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
 --             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
 --             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
+            --TODO: Not include changes that were not applied to other end!
             let newLocalState = computeNewStateFromChanges previousLocalFiles (appliedLocalChanges `union` localChanges)
             let newRemoteState = computeNewStateFromChanges previousRemoteFiles (appliedRemoteChanges `union` remoteChanges)
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
