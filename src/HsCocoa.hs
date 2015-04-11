@@ -25,8 +25,7 @@ foreign export ccall hsRemoteChanges :: IO CInt
 
 hsInitSync :: IO CString
 hsInitSync = do
-        initLogging
-        res <- tryAny getOrCreateSyncDir
+        res <- tryAny (initLogging >> getOrCreateSyncDir)
         case res of
                 Right dir -> newCAString dir
                 Left e -> warningM "HsCocoa.hsInitSync" (show e) >> newCString ""

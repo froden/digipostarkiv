@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables, FlexibleContexts #-}
 
 module Sync where
 
@@ -17,7 +17,6 @@ import Data.List
 import Data.Maybe
 import Control.Exception.Lifted
 import Text.Read (readMaybe)
-import Data.Either
 import System.Log.Logger
 import System.Log.Handler.Simple
 import System.Log.Handler (setFormatter)
@@ -124,30 +123,32 @@ initLocalState = do
 applyChangesLocal :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
     where
-        absoluteTo = combine syncDir
         applyChange :: Change -> ApiAction (Maybe Change)
-        applyChange currentChange@(Created file) =
-            let
-                createdPath = File.path file
-                absoluteTargetFile = absoluteTo (filePath createdPath)
-                remoteFile = Map.lookup createdPath remoteFiles
-            in
-                case remoteFile of
-                    Just r -> do
-                        res <- try (download r absoluteTargetFile) :: ApiAction (Either ApiException ())
-                        if isRight res then do
-                            newFileModified <- liftIO $ getModificationTime absoluteTargetFile
-                            case r of
-                                RemoteFile {} -> return $ Just currentChange {changedFile = File createdPath newFileModified}
-                                RemoteDir {} -> return $ Just currentChange {changedFile = Dir createdPath}
-                        else
-                            return Nothing
-                    Nothing -> error $ "file to download not found: " ++ show createdPath
-        applyChange (Deleted file) = do
-            res <- liftIO (try $ deleteLocal syncDir (File.path file) :: IO (Either IOException File))
-            case res of
-                Right deletedFile -> return $ Just (Deleted deletedFile)
-                Left e -> liftIO $ warningM "Sync.applyChangesLocal" (show e) >> return Nothing
+        applyChange (Created file) = tryWithLogging $ applyCreatedToLocal syncDir remoteFiles file
+        applyChange (Deleted file) = tryWithLogging $ applyDeletedToLocal syncDir file
+
+tryWithLogging :: forall m a. (MonadIO m, MonadBaseControl IO m) => m a -> m (Maybe a)
+tryWithLogging action = do
+    res <- try action :: m (Either SomeException a)
+    case res of
+        Right v -> return $ Just v
+        Left e -> liftIO $ warningM "Sync.tryWithLogging" (show e) >> return Nothing
+
+applyCreatedToLocal :: FilePath -> Map Path RemoteFile -> File -> ApiAction Change
+applyCreatedToLocal syncDir remoteFiles file =
+    let
+        createdPath = File.path file
+        absoluteTargetFile = combine syncDir (filePath createdPath)
+        remoteFile = Map.lookup createdPath remoteFiles
+    in
+        case remoteFile of
+            Just r -> liftM Created $ download r absoluteTargetFile
+            Nothing -> error $ "file to download not found: " ++ show createdPath
+
+applyDeletedToLocal :: MonadIO m => FilePath -> File -> m Change
+applyDeletedToLocal syncDir file = do
+    deletedFile <- liftIO $ deleteLocal syncDir (File.path file)
+    return $ Deleted deletedFile
 
 applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
@@ -233,13 +234,16 @@ deleteLocal syncDir p@(Path relativePath) = deleteFileOrDir
                 removeFile targetFile >> return (File p modified)
 
 
-download :: RemoteFile -> FilePath -> ApiAction ()
-download (RemoteFile _ _ document) targetFile = do
+download :: RemoteFile -> FilePath -> ApiAction File
+download (RemoteFile file _ document) targetFile = do
     (manager, aToken, _, _) <- ask
     liftResourceT $ downloadDocument aToken manager targetFile document
-download (RemoteDir _ _) targetFile = liftIO $ do
+    newFileModified <- liftIO $ getModificationTime targetFile
+    return $ File (File.path file) newFileModified
+download (RemoteDir dir _) targetFile = liftIO $ do
     dirExists <- doesDirectoryExist targetFile
     unless dirExists $ createDirectory targetFile
+    return $ Dir (File.path dir)
 
 checkLocalChange :: IO Bool
 checkLocalChange = do
