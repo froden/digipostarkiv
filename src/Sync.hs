@@ -298,13 +298,8 @@ sync' token = do
             let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
             liftIO $ infoM "Sync.sync" ("localChanges:\n" ++ formatList localChanges)
             liftIO $ infoM "Sync.sync" ("remoteChanges:\n" ++ formatList remoteChanges)
---             liftIO $ debugLog ("changesToApplyLocal " ++ show changesToApplyLocal)
---             liftIO $ debugLog ("changesToApplyRemote" ++ show changesToApplyRemote)
             appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
             appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
---             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
---             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
-            --TODO: Not include changes that were not applied to other end!
             let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
             let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
