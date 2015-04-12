@@ -305,8 +305,8 @@ sync' token = do
 --             liftIO $ debugLog ("appliedLocalChanges" ++ show appliedLocalChanges)
 --             liftIO $ debugLog ("appliedRemoteChanges" ++ show appliedRemoteChanges)
             --TODO: Not include changes that were not applied to other end!
-            let newLocalState = computeNewStateFromChanges previousLocalFiles (appliedLocalChanges `union` localChanges)
-            let newRemoteState = computeNewStateFromChanges previousRemoteFiles (appliedRemoteChanges `union` remoteChanges)
+            let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
+            let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
             liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
             return ()
 

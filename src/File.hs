@@ -76,6 +76,10 @@ computeChangesToApply :: [Change] -> [Change] -> [Change]
 computeChangesToApply = (\\)
 
 
+computeNewState :: Set File -> [Change] -> [Change] -> [Change] -> Set File
+computeNewState previousFiles localChanges appliedLocalChanges appliedRemoteChanges =
+    computeNewStateFromChanges previousFiles (appliedLocalChanges `union` (localChanges `intersect` appliedRemoteChanges))
+
 computeNewStateFromChanges :: Set File -> [Change] -> Set File
 computeNewStateFromChanges = foldl applyChange
     where
