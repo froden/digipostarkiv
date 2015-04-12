@@ -80,12 +80,21 @@ computeNewState :: Set File -> [Change] -> [Change] -> [Change] -> Set File
 computeNewState previousFiles localChanges appliedLocalChanges appliedRemoteChanges =
     computeNewStateFromChanges previousFiles (appliedLocalChanges `union` (localChanges `intersect` appliedRemoteChanges))
 
+findFileByPath :: Set File -> Path -> Maybe File
+findFileByPath set p =
+    let matchingFiles = Set.filter ((== p) . path) set
+    in  if Set.null matchingFiles
+        then Nothing
+        else Just $ Set.findMin matchingFiles
+
 computeNewStateFromChanges :: Set File -> [Change] -> Set File
 computeNewStateFromChanges = foldl applyChange
     where
         applyChange :: Set File -> Change -> Set File
         applyChange resultSet (Created file) = Set.insert file resultSet
-        applyChange resultSet (Deleted file) = Set.delete file resultSet
+        applyChange resultSet (Deleted file) = case findFileByPath resultSet (path file) of
+                                                        Just f -> Set.delete f resultSet
+                                                        Nothing -> resultSet
 
 getFileSetFromMap :: Map Path RemoteFile -> Set File
 getFileSetFromMap = Set.fromList . map getFile . Map.elems

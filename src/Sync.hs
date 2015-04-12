@@ -21,6 +21,8 @@ import System.Log.Logger
 import System.Log.Handler.Simple
 import System.Log.Handler (setFormatter)
 import System.Log.Formatter
+import Data.Typeable
+import System.IO.Error
 
 import Api
 import qualified ApiTypes as DP
@@ -129,10 +131,10 @@ applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
 
 tryWithLogging :: forall m a. (MonadIO m, MonadBaseControl IO m) => m a -> m (Maybe a)
 tryWithLogging action = do
-    res <- try action :: m (Either SomeException a)
+    res <- try action
     case res of
         Right v -> return $ Just v
-        Left e -> liftIO $ warningM "Sync.tryWithLogging" (show e) >> return Nothing
+        Left (SomeException e) -> liftIO $ warningM "Sync.tryWithLogging" (show (typeOf e) ++ ": " ++ show e) >> return Nothing
 
 applyCreatedToLocal :: FilePath -> Map Path RemoteFile -> File -> ApiAction Change
 applyCreatedToLocal syncDir remoteFiles file =
@@ -145,10 +147,14 @@ applyCreatedToLocal syncDir remoteFiles file =
             Just r -> liftM Created $ download r absoluteTargetFile
             Nothing -> error $ "file to download not found: " ++ show createdPath
 
-applyDeletedToLocal :: MonadIO m => FilePath -> File -> m Change
+applyDeletedToLocal :: (MonadIO m, MonadBaseControl IO m) => FilePath -> File -> m Change
 applyDeletedToLocal syncDir file = do
-    deletedFile <- liftIO $ deleteLocal syncDir (File.path file)
-    return $ Deleted deletedFile
+    res <- try $ liftIO $ deleteLocal syncDir (File.path file)
+    case res of
+        Right deletedFile -> return $ Deleted deletedFile
+        Left e | isDoesNotExistError e -> liftIO (warningM "Sync.tryWithLogging" (show e)) >> return (Deleted file)
+        Left e -> throw e
+
 
 applyChangesRemote :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
