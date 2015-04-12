@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import Data.List
 import Data.Time.Clock
 import Data.Time.LocalTime
+import Data.String.Utils
 
 newtype Path = Path {filePath :: FilePath} deriving (Show, Read, Eq, Ord)
 
@@ -84,3 +85,9 @@ computeNewStateFromChanges = foldl applyChange
 
 getFileSetFromMap :: Map Path RemoteFile -> Set File
 getFileSetFromMap = Set.fromList . map getFile . Map.elems
+
+replaceSpecialChars :: [String] -> [String]
+replaceSpecialChars = map replaceSpecial
+    where
+        replaceSpecial =   replace "A\0778" "\0197"
+                         . replace "a\0778" "\0229"
