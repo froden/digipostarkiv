@@ -31,15 +31,6 @@ dirFromFolder = Dir . pathFromFolder
 pathFromFolder :: Folder -> Path
 pathFromFolder = Path . addTrailingPathSeparator . folderName
 
-isDir :: Path -> Bool
-isDir = hasTrailingPathSeparator . filePath
-
-isFile :: Path -> Bool
-isFile = not . isDir
-
---fileFromFilePath :: FilePath -> File
---fileFromFilePath p = if hasTrailingPathSeparator p then Dir p else File p
-
 data Change = Created  {changedFile :: File}
             | Deleted  {changedFile :: File} deriving (Show)
             -- | Modified {changePath :: Path}
@@ -54,12 +45,6 @@ data RemoteFile = RemoteFile File Folder Document | RemoteDir File Folder derivi
 getFile :: RemoteFile -> File
 getFile (RemoteFile file _ _) = file
 getFile (RemoteDir dir _) = dir
-
---data RemoteChange = RemoteCreated File RemoteFile | RemoteDeleted File RemoteFile deriving (Show)
-data RemoteChange = RemoteChange Change RemoteFile deriving (Show)
-
-remoteFileFromFolderDoc :: Folder -> Document -> RemoteFile
-remoteFileFromFolderDoc folder document = RemoteFile (fileFromFolderDoc folder document) folder document
 
 remoteDirFromFolder :: Folder -> RemoteFile
 remoteDirFromFolder folder = RemoteDir (dirFromFolder folder) folder
@@ -102,5 +87,5 @@ getFileSetFromMap = Set.fromList . map getFile . Map.elems
 replaceSpecialChars :: [String] -> [String]
 replaceSpecialChars = map replaceSpecial
     where
-        replaceSpecial =   replace "A\0778" "\0197"
-                         . replace "a\0778" "\0229"
+        replaceSpecial =   replace "A\0778" "\0197" --Å
+                         . replace "a\0778" "\0229" --å
