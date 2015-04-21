@@ -1,6 +1,6 @@
 # Digipostarkiv
 
-Desktop application to syncronize files to Digipost.
+OSX Desktop application to syncronize files to Digipost.
 
 ### Features
 
