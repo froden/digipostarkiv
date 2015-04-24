@@ -6,12 +6,14 @@ module Oauth where
 import qualified Data.ByteString                 as BS
 import qualified Data.Text                       as T
 import qualified Data.Text.Encoding              as T
-import Control.Exception
+import Control.Exception.Lifted
 import System.FilePath.Posix
 import System.Directory
 import Text.Read
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
+import Control.Monad.Trans.Resource
+import Control.Monad.Error
 
 import Network.OAuth.OAuth2
 
@@ -28,22 +30,22 @@ newtype State = State String
 loginUrl :: State -> URL
 loginUrl (State state) = authorizationUrl digigpostKey `appendQueryParam` [("state", sToBS state)]
 
-accessToken :: State -> AuthCode -> IO HTTP.AccessToken
-accessToken (State state) (AuthCode code) = do
+accessToken :: State -> AuthCode -> Manager -> ResourceT IO HTTP.AccessToken
+accessToken (State state) (AuthCode code) manager = do
     let (url, body) = accessTokenUrl' digigpostKey (sToBS code) (Just "code")
-    token <- doJSONPostRequest digigpostKey url (body ++ [("state", sToBS state)])
+    token <- liftIO $ doJSONPostRequest manager digigpostKey url (body ++ [("state", sToBS state)])
     case token of
-        Right (AccessToken at (Just rt)) -> return $ HTTP.AccessToken at rt
+        Right (AccessToken at (Just rt) _ _) -> return $ HTTP.AccessToken at rt
         Right _ -> throwIO NotAuthenticated
         Left _ -> throwIO NotAuthenticated
 
-refreshAccessToken :: HTTP.AccessToken -> IO HTTP.AccessToken
-refreshAccessToken oldToken = do
+refreshAccessToken :: Manager -> HTTP.AccessToken -> IO HTTP.AccessToken
+refreshAccessToken manager oldToken = do
     putStrLn $ "trying to refresh token " ++ show oldToken
     let oldRt = HTTP.refreshToken oldToken
-    newToken <- fetchRefreshToken digigpostKey oldRt
+    newToken <- fetchRefreshToken manager digigpostKey oldRt
     case newToken of
-        Right (AccessToken at _) -> return $ HTTP.AccessToken at oldRt
+        Right (AccessToken at _ _ _) -> return $ HTTP.AccessToken at oldRt
         Left _ -> throwIO NotAuthenticated
 
 storeAccessToken :: HTTP.AccessToken -> IO ()
@@ -63,15 +65,15 @@ loadAccessToken = catch readFileIfExists whenNotFound
         whenNotFound :: IOException -> IO HTTP.AccessToken
         whenNotFound _ = throwIO NotAuthenticated
 
-handleTokenRefresh :: (HTTP.AccessToken -> IO a) -> HTTP.AccessToken -> IO a
-handleTokenRefresh accessFunc token = catch (accessFunc token) handleException
+handleTokenRefresh :: (Manager -> HTTP.AccessToken -> ResourceT IO a) -> HTTP.AccessToken -> Manager -> ResourceT IO a
+handleTokenRefresh accessFunc token manager = catch (accessFunc manager token) handleException
     where
         handleException (StatusCodeException (Status 403 _) _ _) = do
-            newToken <- refreshAccessToken token --TODO: exceptions?
-            storeAccessToken newToken
-            accessFunc newToken  --TODO: retry count??
-        handleException (StatusCodeException (Status 401 _) _ _) = throwIO NotAuthenticated
-        handleException e = throwIO $ HttpFailed e
+            newToken <- liftIO $ refreshAccessToken manager token --TODO: exceptions?
+            liftIO $ storeAccessToken newToken
+            accessFunc manager newToken  --TODO: retry count??
+        handleException (StatusCodeException (Status 401 _) _ _) = throw NotAuthenticated
+        handleException e = throw $ HttpFailed e
 
 removeAccessToken :: IO ()
 removeAccessToken = getHomeDirectory >>= removeFile . accessTokenFile

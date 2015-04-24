@@ -39,7 +39,7 @@ hsAccessToken :: CString -> CString -> IO CInt
 hsAccessToken s c = do
         state <- peekCString s
         code <- peekCString c
-        result <- tryAny $ O.accessToken (O.State state) (O.AuthCode code)
+        result <- tryAny $ withHttp $ O.accessToken (O.State state) (O.AuthCode code)
         case result of
                 Right token -> O.storeAccessToken token >> return 0
                 Left NotAuthenticated -> return 1

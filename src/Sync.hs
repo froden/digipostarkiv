@@ -152,7 +152,7 @@ applyDeletedToLocal syncDir file = do
     res <- try $ liftIO $ deleteLocal syncDir (File.path file)
     case res of
         Right deletedFile -> return $ Deleted deletedFile
-        Left e | isDoesNotExistError e -> liftIO (warningM "Sync.tryWithLogging" (show e)) >> return (Deleted file)
+        Left e | isDoesNotExistError e -> liftIO (warningM "Sync.applyDeletedToLocal" (show e)) >> return (Deleted file)
         Left e -> throw e
 
 
@@ -267,49 +267,50 @@ checkLocalChange = do
     return $ not (null localChanges)
 
 checkRemoteChange :: IO Bool
-checkRemoteChange = loadAccessToken >>= handleTokenRefresh checkRemoteChange'
+checkRemoteChange = handleTokenRefresh checkRemoteChange' <$> loadAccessToken >>= withHttp
 
-checkRemoteChange' :: AccessToken -> IO Bool
-checkRemoteChange' token = do
-    (_, _, previousState, _) <- initLocalState
-    runResourceT $ do
-        manager <- liftIO $ newManager conduitManagerSettings
-        (root, _, mbox) <- getAccount manager token
-        remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
-        let remoteFiles = getFileSetFromMap remoteState
-        let previousRemoteFiles = remoteSyncState previousState
-        let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-        unless (null remoteChanges) (liftIO $ infoM "Sync.checkRemoteChange" ("remoteChanges:\n" ++ formatList remoteChanges))
-        return $ not (null remoteChanges)
+
+withHttp :: (Manager -> ResourceT IO a) -> IO a
+withHttp action = runResourceT $ liftIO (newManager conduitManagerSettings) >>= action
+
+
+checkRemoteChange' :: Manager -> AccessToken -> ResourceT IO Bool
+checkRemoteChange' manager token = do
+    (_, _, previousState, _) <- liftIO initLocalState
+    (root, _, mbox) <- getAccount manager token
+    remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
+    let remoteFiles = getFileSetFromMap remoteState
+    let previousRemoteFiles = remoteSyncState previousState
+    let remoteChanges = computeChanges remoteFiles previousRemoteFiles
+    unless (null remoteChanges) (liftIO $ infoM "Sync.checkRemoteChange" ("remoteChanges:\n" ++ formatList remoteChanges))
+    return $ not (null remoteChanges)
 
 sync :: IO ()
-sync = loadAccessToken >>= handleTokenRefresh sync'
+sync = handleTokenRefresh sync' <$> loadAccessToken >>= withHttp
 
-sync' :: AccessToken -> IO ()
-sync' token = do
-    infoM "Sync.sync" "Syncing"
-    (syncDir, syncFile, previousState, localFiles) <- initLocalState
-    runResourceT $ do
-        manager <- liftIO $ newManager conduitManagerSettings
-        (root, _, mbox) <- getAccount manager token
-        flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
-            remoteState <- getRemoteState
-            let remoteFiles = getFileSetFromMap remoteState
-            let previousRemoteFiles = remoteSyncState previousState
-            let previousLocalFiles = localSyncState previousState
-            let localChanges = computeChanges localFiles previousLocalFiles
-            let remoteChanges = computeChanges remoteFiles previousRemoteFiles
-            --server always win if conflict TODO: better handle conflicts
-            let changesToApplyLocal = remoteChanges
-            let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
-            liftIO $ infoM "Sync.sync" ("localChanges:\n" ++ formatList localChanges)
-            liftIO $ infoM "Sync.sync" ("remoteChanges:\n" ++ formatList remoteChanges)
-            appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
-            appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
-            let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
-            let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
-            liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
-            return ()
+sync' :: Manager -> AccessToken -> ResourceT IO ()
+sync' manager token = do
+    liftIO $ infoM "Sync.sync" "Syncing"
+    (syncDir, syncFile, previousState, localFiles) <- liftIO initLocalState
+    (root, _, mbox) <- getAccount manager token
+    flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
+        remoteState <- getRemoteState
+        let remoteFiles = getFileSetFromMap remoteState
+        let previousRemoteFiles = remoteSyncState previousState
+        let previousLocalFiles = localSyncState previousState
+        let localChanges = computeChanges localFiles previousLocalFiles
+        let remoteChanges = computeChanges remoteFiles previousRemoteFiles
+        --server always win if conflict TODO: better handle conflicts
+        let changesToApplyLocal = remoteChanges
+        let changesToApplyRemote = computeChangesToApply localChanges remoteChanges
+        liftIO $ infoM "Sync.sync" ("localChanges:\n" ++ formatList localChanges)
+        liftIO $ infoM "Sync.sync" ("remoteChanges:\n" ++ formatList remoteChanges)
+        appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
+        appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
+        let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
+        let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
+        liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
+        return ()
 
 initLogging :: IO ()
 initLogging = do
