@@ -18,7 +18,7 @@ library
   -- other-modules:
   build-depends:
                        base ==4.7.*,
-                       aeson ==0.7.*,
+                       aeson ==0.8.*,
                        network-uri < 2.6, network < 2.6,
                        http-conduit ==2.0.*,
                        http-client-multipart ==0.2.*,
