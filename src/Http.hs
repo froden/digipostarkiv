@@ -43,4 +43,4 @@ data AccessToken = AccessToken { accessToken :: ByteString, refreshToken :: Byte
 
 accessTokenHeader :: AccessToken -> Header
 accessTokenHeader token = ("Authorization", hdrValue)
-	where hdrValue = "Bearer " `append` accessToken token
+        where hdrValue = "Bearer " `append` accessToken token

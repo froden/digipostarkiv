@@ -93,7 +93,6 @@ getDirContents :: FilePath -> IO [FilePath]
 getDirContents dirPath = do
         names <- replaceSpecialChars <$> getDirectoryContents dirPath
         return $ filter (not . specialFiles) names
-
     where specialFiles f = "." `isPrefixOf` f || f `elem` [".", ".."]
 
 getLocalState :: FilePath -> IO (Set File)
