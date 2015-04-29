@@ -22,8 +22,10 @@ OSX Desktop application to syncronize files to Digipost.
 
 * install ghc >= 7.8.1
 * install cabal >= 1.20
-* cabal configure
+* git clone this repo
+* cabal sandbox init
+* cabal install --only-dependencies
 * cabal build
 * open xcode project
-* Set GHC_VERSION variable
+* Set GHC_VERSION variable or change the path to where ghc is installed under build properties in xcode
 * build and run
