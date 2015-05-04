@@ -104,14 +104,19 @@ getLocalState syncDirPath = Set.insert (Dir (Path "./")) <$> findFilesRecursive 
             content <- forM properNames $ \name -> do
                 let subPath = dirPath </> name
                 isDirectory <- doesDirectoryExist subPath
-                modificationTime <- getModificationTime subPath
                 if isDirectory
                     then findFilesRecursive subPath
-                    else return $ Set.singleton $ File (Path $ relativeToSyncDir subPath) modificationTime
+                    else Set.singleton <$> getLocalFile syncDirPath subPath
             let contentSet = Set.unions content
             let relativeDirPath = addTrailingPathSeparator (relativeToSyncDir dirPath)
             let dir = Dir $ Path relativeDirPath
             return $ if relativeDirPath == "./" then contentSet else Set.insert dir contentSet
+
+getLocalFile :: FilePath -> FilePath -> IO File
+getLocalFile basePath fullPath = do
+    modificationTime <- getModificationTime fullPath
+    let relativePath = makeRelative basePath fullPath
+    return $ File (Path relativePath) modificationTime
 
 initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
