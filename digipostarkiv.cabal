@@ -42,7 +42,8 @@ library
                        hslogger,
                        MissingH,
                        HDBC ==2.4.*,
-                       HDBC-sqlite3 ==2.3.*
+                       HDBC-sqlite3 ==2.3.*,
+                       async ==2.0.*
   hs-source-dirs:      src
   exposed-modules:     DigipostKey, HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File, Db
   ghc-options:         -Wall -staticlib -threaded

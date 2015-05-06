@@ -23,12 +23,14 @@ import System.Log.Handler (setFormatter)
 import System.Log.Formatter
 import Data.Typeable
 import System.IO.Error
+import Control.Concurrent.Async
 
 import Api
 import qualified ApiTypes as DP
 import Http (AccessToken)
 import File
 import Oauth
+import Db
 
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
@@ -54,9 +56,9 @@ writeSyncState syncFile state = do
 
 getRemoteState :: ApiAction (Map Path RemoteFile)
 getRemoteState = do
-    (_, _, _, mbox) <- ask
+    (mgr, atoken, csrf, mbox) <- ask
     let mboxFolders = (DP.folder . DP.folders) mbox
-    contents <- mapM getFolderContents mboxFolders
+    contents <- liftIO $ mapConcurrently (\f -> runResourceT $ runReaderT (getFolderContents f) (mgr, atoken, csrf, mbox)) mboxFolders
     inboxContents <- getInboxContents
     let allFolders = Map.unions contents
     return $ Map.union inboxContents allFolders
@@ -228,6 +230,7 @@ upload (RemoteDir _ parentFolder) absoluteFilePath = do
     uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
     (manager, aToken, csrf, _) <- ask
     liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
+    liftIO $ debugM "Sync.upload" ("Uploaded " ++ absoluteFilePath)
 upload _ _ = error "parent dir cannot be a file"
 
 deleteRemote :: RemoteFile -> ApiAction ()
@@ -255,6 +258,7 @@ download :: RemoteFile -> FilePath -> ApiAction File
 download (RemoteFile file _ document) targetFile = do
     (manager, aToken, _, _) <- ask
     liftResourceT $ downloadDocument aToken manager targetFile document
+    liftIO $ debugM "Sync.download" ("Downloaded " ++ targetFile)
     newFileModified <- liftIO $ getModificationTime targetFile
     return $ File (File.path file) newFileModified
 download (RemoteDir dir _) targetFile = liftIO $ do
@@ -294,11 +298,13 @@ sync = handleTokenRefresh sync' <$> loadAccessToken >>= withHttp
 
 sync' :: Manager -> AccessToken -> ResourceT IO ()
 sync' manager token = do
-    liftIO $ infoM "Sync.sync" "Syncing"
+    liftIO $ infoM "Sync.sync" "Start sync"
     (syncDir, syncFile, previousState, localFiles) <- liftIO initLocalState
     (root, _, mbox) <- getAccount manager token
     flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
+        liftIO $ debugM "Sync.sync" "before getRemoteState"
         remoteState <- getRemoteState
+        liftIO $ debugM "Sync.sync" "afterGetRemoteState"
         let remoteFiles = getFileSetFromMap remoteState
         let previousRemoteFiles = remoteSyncState previousState
         let previousLocalFiles = localSyncState previousState
@@ -311,9 +317,18 @@ sync' manager token = do
         liftIO $ infoM "Sync.sync" ("remoteChanges:\n" ++ formatList remoteChanges)
         appliedLocalChanges <- applyChangesLocal syncDir remoteState changesToApplyLocal
         appliedRemoteChanges <- applyChangesRemote syncDir remoteState changesToApplyRemote
+        liftIO $ debugM "Sync.sync" "finished applying changes"
         let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
         let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
+        liftIO $ debugM "Sync.sync" "computed new state"
         liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
+        liftIO $ debugM "Sync.sync" "wrote new state to file"
+        meta <- liftIO getMetaDir
+        liftIO $ withDb meta $ \conn -> do
+            initDatabase conn
+            replaceLocalFiles newLocalState conn
+            replaceRemoteFiles newRemoteState conn
+        liftIO $ debugM "Sync.sync" "stored in db"
         return ()
 
 initLogging :: IO ()
@@ -323,7 +338,7 @@ initLogging = do
     h <- fileHandler logFile DEBUG >>= \lh -> return $
             setFormatter lh (simpleLogFormatter "[$time : $loggername : $prio] $msg")
     updateGlobalLogger "" (addHandler h)
-    updateGlobalLogger "" (setLevel INFO)
+    updateGlobalLogger "" (setLevel DEBUG)
 
 getUserSyncDir :: IO FilePath
 getUserSyncDir = do

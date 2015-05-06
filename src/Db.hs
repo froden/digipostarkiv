@@ -8,39 +8,64 @@ import qualified Data.Set as Set
 
 import File
 
+newtype Table = Table {tableName :: String}
+
+localFilesTable :: Table
+localFilesTable = Table "local_files"
+
+remoteFilesTable :: Table
+remoteFilesTable = Table "remote_files"
+
 initDatabase :: Connection -> IO ()
 initDatabase conn = do
-    let createLocalFiles = "create table if not exists local_files (path varchar(255) not null primary key, modified timestamp not null)"
-    _ <- run conn createLocalFiles []
+    mapM_ createTable [localFilesTable, remoteFilesTable]
     commit conn
+    where createTable t = do
+             let sql = "create table if not exists " ++ tableName t ++
+                       " (path varchar(255) not null primary key, modified timestamp, dir boolean not null)"
+             run conn sql []
 
 withDb :: FilePath -> (Connection -> IO a) -> IO a
 withDb metaDir action = do
     conn <- connectSqlite3 (metaDir </> "sync.db")
     finally (action conn) (disconnect conn)
 
-insertFile :: File -> Connection -> IO ()
-insertFile f conn = do
-    let p = filePath (path f)
-    let m = modifiedTime f
-    _ <- run conn "insert into local_files (path, modified) values (?, ?)" [toSql p, toSql m]
+insertFile :: Connection -> Table -> File -> IO ()
+insertFile conn t f = do
+    let params = case f of
+                    File (Path p) modified -> [toSql p, toSql modified, toSql False]
+                    Dir (Path p)           -> [toSql p, SqlNull, toSql True]
+    _ <- run conn ("insert into " ++ tableName t ++ " (path, modified, dir) values (?, ?, ?)") params
     commit conn
 
+
 getLocalFiles :: Connection -> IO (Set.Set File)
-getLocalFiles conn = do
-    res <- quickQuery' conn "select path, modified from local_files" []
+getLocalFiles = getAllFiles localFilesTable
+
+getRemoteFiles :: Connection -> IO (Set.Set File)
+getRemoteFiles = getAllFiles remoteFilesTable
+
+getAllFiles :: Table -> Connection -> IO (Set.Set File)
+getAllFiles t conn = do
+    res <- quickQuery' conn ("select path, modified, dir from " ++ tableName t) []
     let files = map rowToFile res
     return $ Set.fromList files
     where
         rowToFile :: [SqlValue] -> File
-        rowToFile [sqlPath, sqlModified] = File (Path (fromSql sqlPath)) (fromSql sqlModified)
+        rowToFile [sqlPath, sqlModified, sqlIsDir] =
+            if fromSql sqlIsDir then
+                Dir (Path (fromSql sqlPath))
+            else
+                File (Path (fromSql sqlPath)) (fromSql sqlModified)
         rowToFile x = error $ "Unexpected result: " ++ show x
 
-updateLocalFiles :: Set.Set File -> Connection -> IO ()
-updateLocalFiles files conn = mapM_ updateFile (Set.toList files)
-    where
-        updateFile file = do
-            let p = filePath (path file)
-            let m = modifiedTime file
-            _ <- run conn "replace into local_files (path, modified) values (?, ?)" [toSql p, toSql m]
-            commit conn
+replaceLocalFiles :: Set.Set File -> Connection -> IO ()
+replaceLocalFiles = replaceTable localFilesTable
+
+replaceRemoteFiles :: Set.Set File -> Connection -> IO ()
+replaceRemoteFiles = replaceTable remoteFilesTable
+
+replaceTable :: Table -> Set.Set File -> Connection -> IO ()
+replaceTable t files conn = do
+    _ <- run conn ("delete from " ++ tableName t) []
+    mapM_ (insertFile conn t) (Set.toList files)
