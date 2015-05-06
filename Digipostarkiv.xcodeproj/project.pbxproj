@@ -11,6 +11,7 @@
 		DE0139851941C5A60081B26E /* digipost-red.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139821941C5A60081B26E /* digipost-red.png */; };
 		DE0139861941C5A60081B26E /* digipost-white.png in Resources */ = {isa = PBXBuildFile; fileRef = DE0139831941C5A60081B26E /* digipost-white.png */; };
 		DE0986FB1A82685C0073C85E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0986FA1A82685C0073C85E /* Extensions.swift */; };
+		DE2EF8971AFAB32A00BA16F0 /* libsqlite3.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2EF8961AFAB32A00BA16F0 /* libsqlite3.0.dylib */; };
 		DE4BC4321A7FD13800FD0185 /* DigipostarkivAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4BC4311A7FD13800FD0185 /* DigipostarkivAppDelegate.swift */; };
 		DE7667DE1A6CD7F100F67D9A /* MenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667DD1A6CD7F100F67D9A /* MenuController.swift */; };
 		DE7667E41A6D9A4400F67D9A /* LoginWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7667E31A6D9A4400F67D9A /* LoginWindowController.swift */; };
@@ -30,6 +31,7 @@
 		DE0139821941C5A60081B26E /* digipost-red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-red.png"; sourceTree = "<group>"; };
 		DE0139831941C5A60081B26E /* digipost-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "digipost-white.png"; sourceTree = "<group>"; };
 		DE0986FA1A82685C0073C85E /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		DE2EF8961AFAB32A00BA16F0 /* libsqlite3.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.0.dylib; path = usr/lib/libsqlite3.0.dylib; sourceTree = SDKROOT; };
 		DE4BC4311A7FD13800FD0185 /* DigipostarkivAppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DigipostarkivAppDelegate.swift; sourceTree = "<group>"; };
 		DE7667DC1A6CD7F000F67D9A /* Digipostarkiv-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Digipostarkiv-Bridging-Header.h"; sourceTree = "<group>"; };
 		DE7667DD1A6CD7F100F67D9A /* MenuController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuController.swift; sourceTree = "<group>"; };
@@ -61,6 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE2EF8971AFAB32A00BA16F0 /* libsqlite3.0.dylib in Frameworks */,
 				DEB1EF5B1906F23A008C83D2 /* Cocoa.framework in Frameworks */,
 				DE852DC9192CAA9F00CCAFC3 /* WebKit.framework in Frameworks */,
 				DEE5DCD41909082700F7C9FD /* liba.a in Frameworks */,
@@ -91,6 +94,7 @@
 		DEB1EF591906F23A008C83D2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DE2EF8961AFAB32A00BA16F0 /* libsqlite3.0.dylib */,
 				DE852DC8192CAA9F00CCAFC3 /* WebKit.framework */,
 				DEB1EF5A1906F23A008C83D2 /* Cocoa.framework */,
 				DEB1EF791906F23A008C83D2 /* XCTest.framework */,
