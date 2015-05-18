@@ -4,6 +4,7 @@ module Api where
 
 import Network.HTTP.Conduit
 import Network.HTTP.Client.MultipartFormData
+import Network.HTTP.Types.Header
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as L
@@ -18,6 +19,7 @@ import Control.Exception
 import Data.Typeable
 import System.FilePath.Posix
 import Control.Applicative
+import Data.List
 
 import Http
 import qualified ApiTypes as DP
@@ -85,6 +87,9 @@ getDocuments session manager docsLink = getRequest session (DP.uri docsLink) >>=
 getFolder :: Session -> Manager -> DP.Link -> ResourceT IO DP.Folder
 getFolder session manager folderLink = getRequest session (DP.uri folderLink) >>= getJson manager
 
+getRepresentation :: FromJSON a => Session -> Manager -> DP.Link -> ResourceT IO a
+getRepresentation session manager link = getRequest session (DP.uri link) >>= getJson manager
+
 getMailbox :: Session -> Manager -> DP.Link -> ResourceT IO DP.Mailbox
 getMailbox session manager mboxLink = getRequest session (DP.uri mboxLink) >>= getJson manager
 
@@ -111,17 +116,23 @@ uploadAll :: Session -> Manager -> DP.Link -> String -> [FilePath] -> ResourceT 
 uploadAll session manager uploadLink token = void . mapM upload
     where upload = uploadFileMultipart session manager uploadLink token
 
-uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO ()
+uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO DP.Link
 uploadFileMultipart session manager uploadLink token file = do
     req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
     let subject = UTF8.fromString . DP.localToRemoteName . takeBaseName $ file
     multipartReq <- formDataBody [partBS "subject" subject,
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
-    _ <- http multipartReq manager
+    res <- http multipartReq manager
+    let (Just location) = find (\h -> hLocation == fst h) (responseHeaders res)
     --check that responsebody is "OK"
     --responseBody res $$+- sinkFile "temp.txt"
-    return ()
+    return $ DP.Link "self" ((unpack . snd) location)
+
+uploadDocument :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO DP.Document
+uploadDocument session manager uploadLink token file = do
+    docLink <- uploadFileMultipart session manager uploadLink token file
+    getRepresentation session manager docLink
 
 createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT IO DP.Folder
 createFolder session manager createLink csrf folderName = do

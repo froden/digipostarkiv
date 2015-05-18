@@ -175,15 +175,12 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                         return $ appliedHead : appliedTail
 
 applyCreatedFileToRemote :: FilePath -> Map Path RemoteFile -> Path -> ApiAction Change
-applyCreatedFileToRemote syncDir remoteFiles currentPath@(Path relativeFilePath) = do
+applyCreatedFileToRemote syncDir remoteFiles (Path relativeFilePath) = do
     let parentDirPath = addTrailingPathSeparator . takeDirectory $ relativeFilePath
     let absoluteFilePath = syncDir </> relativeFilePath
     let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
     case parentDirMaybe of
-        Just parentDir -> do
-            upload parentDir absoluteFilePath
-            (RemoteFile file _ _) <- getUploadedDocument parentDir currentPath
-            return $ Created file
+        Just parentDir -> Created <$> upload parentDir absoluteFilePath
         Nothing -> error $ "no parent dir: " ++ parentDirPath
 
 applyCreatedDirToRemote ::Path -> ApiAction (Change, RemoteFile)
@@ -206,18 +203,13 @@ applyDeletedToRemote remoteFiles file = do
             return $ Deleted (getFile remoteFile)
         Nothing -> error $ "remote file not found: " ++ show deletedPath
 
-getUploadedDocument :: RemoteFile -> Path -> ApiAction RemoteFile
-getUploadedDocument (RemoteDir (Dir dirPath) parentFolder) docPath = do
-    contents <- if dirPath == Path "./" then getInboxContents else getFolderContents parentFolder
-    return $ fromMaybe (error "expected to find uploaded document") (Map.lookup docPath contents)
-getUploadedDocument d f = error $ "parent dir is file or file is dir:\n" ++ show d ++ "\n" ++ show f
-
-upload :: RemoteFile -> FilePath -> ApiAction ()
+upload :: RemoteFile -> FilePath -> ApiAction File
 upload (RemoteDir _ parentFolder) absoluteFilePath = do
     uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
     (manager, aToken, csrf, _) <- ask
-    liftResourceT $ uploadFileMultipart aToken manager uploadLink csrf absoluteFilePath
+    doc <- liftResourceT $ uploadDocument aToken manager uploadLink csrf absoluteFilePath
     liftIO $ debugM "Sync.upload" ("Uploaded " ++ absoluteFilePath)
+    return $ fileFromFolderDoc parentFolder doc
 upload _ _ = error "parent dir cannot be a file"
 
 deleteRemote :: RemoteFile -> ApiAction ()
