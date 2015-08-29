@@ -360,24 +360,26 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.4;
+				GHC_VERSION = 7.10.2;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
+					"/usr/local/lib/**",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
+					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				STRIP_INSTALLED_PRODUCT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include/** $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;
 			};
@@ -392,23 +394,25 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.4;
+				GHC_VERSION = 7.10.2;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
+					"/usr/local/lib/**",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
+					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				STRIP_INSTALLED_PRODUCT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Digipostarkiv/Digipostarkiv-Bridging-Header.h";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include $(PROJECT_DIR)/dist/build /usr/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/lib/ghc-$(GHC_VERSION)/include/** $(PROJECT_DIR)/dist/build /usr/local/include/**";
 				VALID_ARCHS = "i386 x86_64";
 				WRAPPER_EXTENSION = app;
 			};

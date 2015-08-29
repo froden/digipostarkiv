@@ -13,7 +13,7 @@ import Text.Read
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
 import Control.Monad.Trans.Resource
-import Control.Monad.Error
+import Control.Monad.Except
 
 import Network.OAuth.OAuth2
 
