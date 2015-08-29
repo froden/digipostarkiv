@@ -22,7 +22,7 @@ initDatabase conn = do
     commit conn
     where createTable t = do
              let sql = "create table if not exists " ++ tableName t ++
-                       " (path varchar(255) not null primary key, modified timestamp, dir boolean not null)"
+                       " (id INTEGER PRIMARY KEY, path varchar(255) not null, modified timestamp, dir boolean not null)"
              run conn sql []
 
 withDb :: FilePath -> (Connection -> IO a) -> IO a

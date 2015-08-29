@@ -7,14 +7,14 @@
 	<key>IDESourceControlProjectIdentifier</key>
 	<string>1344A1C0-8645-4B9A-8E46-E106617B7DD8</string>
 	<key>IDESourceControlProjectName</key>
-	<string>project</string>
+	<string>Digipostarkiv</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
 		<key>4DB05D46E39E1F514619BD03DB76F154070656D0</key>
 		<string>github.com:froden/digipostarkiv.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>Digipostarkiv.xcodeproj/project.xcworkspace</string>
+	<string>Digipostarkiv.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>4DB05D46E39E1F514619BD03DB76F154070656D0</key>
