@@ -9,7 +9,7 @@ import Foundation
 
 extension Optional {
 
-    func flatMap<U>(f: (a: T) -> Optional<U>) -> Optional<U> {
+    func flatMap<U>(f: (a: Wrapped) -> Optional<U>) -> Optional<U> {
         switch (self) {
             case .None: return nil
             case .Some(let value): return f(a: value)

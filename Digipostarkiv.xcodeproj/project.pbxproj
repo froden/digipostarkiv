@@ -187,7 +187,9 @@
 		DEB1EF4F1906F23A008C83D2 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0510;
+				LastSwiftMigration = 0730;
+				LastSwiftUpdateCheck = 0730;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = Nerbraten;
 			};
 			buildConfigurationList = DEB1EF521906F23A008C83D2 /* Build configuration list for PBXProject "Digipostarkiv" */;
@@ -294,6 +296,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -356,18 +359,20 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.4;
+				GHC_VERSION = 7.10.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
+					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
+					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				STRIP_INSTALLED_PRODUCT = YES;
@@ -388,18 +393,20 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Digipostarkiv/Digipostarkiv-Prefix.pch";
-				GHC_VERSION = 7.8.4;
+				GHC_VERSION = 7.10.3;
 				INFOPLIST_FILE = "Digipostarkiv/Digipostarkiv-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Digipostarkiv",
 					"$(PROJECT_DIR)/**",
+					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"-lz",
 					"-liconv",
+					"-lgmp",
 				);
 				PRODUCT_NAME = Digipostarkiv;
 				STRIP_INSTALLED_PRODUCT = YES;

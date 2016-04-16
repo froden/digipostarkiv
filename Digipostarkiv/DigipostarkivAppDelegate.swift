@@ -25,7 +25,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(notification: NSNotification) {
         NSAppleEventManager.sharedAppleEventManager().setEventHandler(
             self,
-            andSelector: "handleURLEvent:replyEvent:",
+            andSelector: #selector(handleURLEvent(_:replyEvent:)),
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL))
     }
@@ -42,7 +42,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     func startSyncTimer() {
         if (!isStarted()) {
             NSLog("starting sync timer")
-            syncTimer = NSTimer.scheduledTimerWithTimeInterval(10.0, target: self, selector: "sync", userInfo: nil, repeats: true)
+            syncTimer = NSTimer.scheduledTimerWithTimeInterval(10.0, target: self, selector: #selector(sync), userInfo: nil, repeats: true)
         }
         syncTimer!.fire()
     }
@@ -71,7 +71,8 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
             return;
         }
         syncInProgress = true;
-        let checkRemote = runNumber++ % 6 == 0
+        let checkRemote = runNumber % 6 == 0
+        runNumber = runNumber + 1
         var remoteSync = false
         if (checkRemote) {
             let remoteChangeResult = Sync.hasRemoteChange()
@@ -133,8 +134,10 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         let urlComponents = url.query?.componentsSeparatedByString("&")
         let codeCompoents = urlComponents?
             .map{$0.componentsSeparatedByString("=")}
-            .filter{$0.count == 2 && $0[0] == "code"}.first
-        return codeCompoents?[1]
+        let codes = codeCompoents?
+            .filter{$0.count == 2 && $0[0] == "code"}
+            .first
+        return codes?[1]
     }
     
 }
