@@ -3,7 +3,6 @@
 module ApiTypes where
 
 import Data.Aeson
-import Control.Applicative
 import Control.Monad
 import GHC.Generics (Generic)
 import Data.List

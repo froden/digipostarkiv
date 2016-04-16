@@ -8,17 +8,15 @@ import Network.HTTP.Types.Header
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as L
-import Control.Monad.Error
+import Control.Monad.Except
 import GHC.Generics (Generic)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Control.Monad.Trans.Resource
-import Control.Failure
 import Data.Conduit
 import Data.Conduit.Binary (sinkFile)
 import Control.Exception
 import Data.Typeable
 import System.FilePath.Posix
-import Control.Applicative
 import Data.List
 
 import Http
@@ -75,7 +73,7 @@ authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> 
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
 
-getRequest :: (Failure HttpException m, Functor m) => Session -> String -> m Request
+getRequest :: (MonadThrow m, Functor m) => Session -> String -> m Request
 getRequest session url = addHeader acceptDigipost <$> setSession session <$> parseUrl url
 
 getRoot :: Manager -> Session -> ResourceT IO DP.Root

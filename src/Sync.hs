@@ -3,10 +3,9 @@
 module Sync where
 
 import Network.HTTP.Conduit
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Trans.Resource
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
-import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
@@ -137,7 +136,7 @@ applyCreatedToLocal syncDir remoteFiles file =
         remoteFile = Map.lookup createdPath remoteFiles
     in
         case remoteFile of
-            Just r -> liftM Created $ download r absoluteTargetFile
+            Just r -> Created <$> download r absoluteTargetFile
             Nothing -> error $ "file to download not found: " ++ show createdPath
 
 applyDeletedToLocal :: (MonadIO m, MonadBaseControl IO m) => FilePath -> File -> m Change
@@ -257,7 +256,7 @@ checkRemoteChange = handleTokenRefresh checkRemoteChange' <$> loadAccessToken >>
 
 
 withHttp :: (Manager -> ResourceT IO a) -> IO a
-withHttp action = runResourceT $ liftIO (newManager conduitManagerSettings) >>= action
+withHttp action = runResourceT $ liftIO (newManager tlsManagerSettings) >>= action
 
 
 checkRemoteChange' :: Manager -> AccessToken -> ResourceT IO Bool

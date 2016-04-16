@@ -17,33 +17,34 @@ cabal-version:       >=1.20
 library
   -- other-modules:
   build-depends:
-                       base ==4.7.*,
-                       aeson ==0.8.*,
-                       network-uri < 2.6, network < 2.6,
-                       http-conduit ==2.0.*,
-                       http-client-multipart ==0.2.*,
-                       http-client ==0.2.*,
-                       http-types ==0.8.*,
-                       transformers ==0.3.*,
-                       bytestring ==0.10.*,
-                       conduit ==1.0.*,
-                       resourcet ==0.4.*,
-                       utf8-string ==0.3.*,
-                       failure ==0.2.*,
-                       time ==1.4.*,
-                       old-locale ==1.0.*,
-                       directory ==1.2.*,
-                       mtl ==2.1.*,
-                       filepath ==1.3.*,
-                       hoauth2 ==0.4.7,
-                       text ==1.1.*,
+                       base,
+                       aeson,
+                       network-uri,
+                       http-conduit,
+                       conduit-extra,
+--                       http-client-multipart,
+                       http-client,
+                       http-types,
+                       transformers,
+                       bytestring,
+                       conduit,
+                       resourcet,
+                       utf8-string,
+--                       failure ==0.2.*,
+                       time,
+                       old-locale,
+                       directory,
+                       mtl,
+                       filepath,
+                       hoauth2,
+                       text,
                        containers,
                        lifted-base,
                        hslogger,
                        MissingH,
-                       HDBC ==2.4.*,
-                       HDBC-sqlite3 ==2.3.*,
-                       async ==2.0.*
+                       HDBC,
+                       HDBC-sqlite3,
+                       async
   hs-source-dirs:      src
   exposed-modules:     DigipostKey, HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File, Db
   ghc-options:         -Wall -staticlib -threaded
@@ -51,7 +52,7 @@ library
 
 executable digipostarkiv
   build-depends:
-                       base ==4.7.*,
+                       base >= 4 && < 5,
                        digipostarkiv
   main-is:             Main.hs
   hs-source-dirs:      main
