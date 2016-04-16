@@ -29,7 +29,6 @@ import qualified ApiTypes as DP
 import Http (AccessToken)
 import File
 import Oauth
-import Db
 
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
@@ -314,12 +313,6 @@ sync' manager token = do
         liftIO $ debugM "Sync.sync" "computed new state"
         liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
         liftIO $ debugM "Sync.sync" "wrote new state to file"
-        meta <- liftIO getMetaDir
-        liftIO $ withDb meta $ \conn -> do
-            initDatabase conn
-            replaceLocalFiles newLocalState conn
-            replaceRemoteFiles newRemoteState conn
-        liftIO $ debugM "Sync.sync" "stored in db"
         return ()
 
 initLogging :: IO ()
