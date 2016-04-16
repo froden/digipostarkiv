@@ -15,6 +15,7 @@ import System.Directory
 import Data.List
 import Data.Maybe
 import Control.Exception.Lifted
+import Text.Read (readMaybe)
 import System.Log.Logger
 import System.Log.Handler.Simple
 import System.Log.Handler (setFormatter)
@@ -33,8 +34,24 @@ import Db
 type CSRFToken = String
 type ApiAction a = ReaderT (Manager, AccessToken, CSRFToken, DP.Mailbox) (ResourceT IO) a
 
+data SyncState = SyncState {localSyncState :: Set File, remoteSyncState :: Set File} deriving (Show, Read)
+
 syncDirName :: String
 syncDirName = "Digipostarkiv"
+
+readSyncState :: FilePath -> IO SyncState
+readSyncState syncFile = do
+        r <- try (readFile syncFile) :: IO (Either IOException String)
+        case r of
+            Right content -> return $ fromMaybe emptyState (readMaybe content)
+            Left _ -> return emptyState
+    where emptyState = SyncState Set.empty Set.empty
+
+writeSyncState :: FilePath -> SyncState -> IO ()
+writeSyncState syncFile state = do
+    let tempFile = syncFile ++ ".tmp"
+    writeFile tempFile (show state)
+    renameFile tempFile syncFile
 
 getRemoteState :: ApiAction (Map Path RemoteFile)
 getRemoteState = do
@@ -102,17 +119,13 @@ getLocalFile basePath fullPath = do
     let relativePath = makeRelative basePath fullPath
     return $ File (Path relativePath) modificationTime
 
-initLocalState :: IO (FilePath, Set File, Set File, Set File)
+initLocalState :: IO (FilePath, FilePath, SyncState, Set File)
 initLocalState = do
     syncDir <- getOrCreateSyncDir
-    metaDir <- getMetaDir
-    (lfs, rfs) <- withDb metaDir $ \conn -> do
-        initDatabase conn
-        previousLocalFiles <- getLocalFiles conn
-        previousRemoteFiles <- getRemoteFiles conn
-        return (previousLocalFiles, previousRemoteFiles)
+    syncFile <- getSyncFile
+    previousState <- readSyncState syncFile
     localState <- getLocalState syncDir
-    return (syncDir, lfs, rfs, localState)
+    return (syncDir, syncFile, previousState, localState)
 
 applyChangesLocal :: FilePath -> Map Path RemoteFile -> [Change] -> ApiAction [Change]
 applyChangesLocal syncDir remoteFiles = fmap catMaybes . mapM applyChange
@@ -246,7 +259,8 @@ download (RemoteDir dir _) targetFile = liftIO $ do
 
 checkLocalChange :: IO Bool
 checkLocalChange = do
-    (_, previousLocalFiles, _, localFiles) <- initLocalState
+    (_, _, previousState, localFiles) <- initLocalState
+    let previousLocalFiles = localSyncState previousState
     let localChanges = computeChanges localFiles previousLocalFiles
     unless (null localChanges) (liftIO $ infoM "Sync.checkLocalChange" ("localChanges:\n" ++ formatList localChanges))
     return $ not (null localChanges)
@@ -261,10 +275,11 @@ withHttp action = runResourceT $ liftIO (newManager tlsManagerSettings) >>= acti
 
 checkRemoteChange' :: Manager -> AccessToken -> ResourceT IO Bool
 checkRemoteChange' manager token = do
-    (_, _, previousRemoteFiles, _) <- liftIO initLocalState
+    (_, _, previousState, _) <- liftIO initLocalState
     (root, _, mbox) <- getAccount manager token
     remoteState <- runReaderT getRemoteState (manager, token, DP.csrfToken root, mbox)
     let remoteFiles = getFileSetFromMap remoteState
+    let previousRemoteFiles = remoteSyncState previousState
     let remoteChanges = computeChanges remoteFiles previousRemoteFiles
     unless (null remoteChanges) (liftIO $ infoM "Sync.checkRemoteChange" ("remoteChanges:\n" ++ formatList remoteChanges))
     return $ not (null remoteChanges)
@@ -275,13 +290,15 @@ sync = handleTokenRefresh sync' <$> loadAccessToken >>= withHttp
 sync' :: Manager -> AccessToken -> ResourceT IO ()
 sync' manager token = do
     liftIO $ infoM "Sync.sync" "Start sync"
-    (syncDir, previousLocalFiles, previousRemoteFiles, localFiles) <- liftIO initLocalState
+    (syncDir, syncFile, previousState, localFiles) <- liftIO initLocalState
     (root, _, mbox) <- getAccount manager token
     flip runReaderT (manager, token, DP.csrfToken root, mbox) $ do
         liftIO $ debugM "Sync.sync" "before getRemoteState"
         remoteState <- getRemoteState
         liftIO $ debugM "Sync.sync" "afterGetRemoteState"
         let remoteFiles = getFileSetFromMap remoteState
+        let previousRemoteFiles = remoteSyncState previousState
+        let previousLocalFiles = localSyncState previousState
         let localChanges = computeChanges localFiles previousLocalFiles
         let remoteChanges = computeChanges remoteFiles previousRemoteFiles
         --server always win if conflict TODO: better handle conflicts
@@ -295,6 +312,8 @@ sync' manager token = do
         let newLocalState = computeNewState previousLocalFiles localChanges appliedLocalChanges appliedRemoteChanges
         let newRemoteState = computeNewState previousRemoteFiles remoteChanges appliedRemoteChanges appliedLocalChanges
         liftIO $ debugM "Sync.sync" "computed new state"
+        liftIO $ writeSyncState syncFile (SyncState newLocalState newRemoteState)
+        liftIO $ debugM "Sync.sync" "wrote new state to file"
         meta <- liftIO getMetaDir
         liftIO $ withDb meta $ \conn -> do
             initDatabase conn

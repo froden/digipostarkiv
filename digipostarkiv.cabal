@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                digipostarkiv
-version:             0.6.3
+version:             0.6.4
 -- synopsis:
 -- description:
 license:             Apache-2.0
