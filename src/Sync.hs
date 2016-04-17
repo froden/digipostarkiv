@@ -177,24 +177,31 @@ applyChangesRemote syncDir rState = fmap catMaybes . applyChanges rState
                         appliedTail <- applyChanges newState tailChanges
                         return $ appliedHead : appliedTail
                     Created (File createdPath _) -> do
-                        appliedHead <- tryWithLogging $ applyCreatedFileToRemote syncDir remoteState createdPath
-                        appliedTail <- applyChanges remoteState tailChanges
+                        res <- tryWithLogging $ applyCreatedFileToRemote syncDir remoteState createdPath
+                        let appliedHead = fmap fst res
+                        let newFile = fmap snd res
+                        let newState = case newFile of
+                                            Just nf -> Map.insert createdPath nf remoteState
+                                            Nothing -> remoteState
+                        appliedTail <- applyChanges newState tailChanges
                         return $ appliedHead : appliedTail
                     Deleted file -> do
                         appliedHead <- tryWithLogging $ applyDeletedToRemote remoteState file
                         appliedTail <- applyChanges remoteState tailChanges
                         return $ appliedHead : appliedTail
 
-applyCreatedFileToRemote :: FilePath -> Map Path RemoteFile -> Path -> ApiAction Change
+applyCreatedFileToRemote :: FilePath -> Map Path RemoteFile -> Path -> ApiAction (Change, RemoteFile)
 applyCreatedFileToRemote syncDir remoteFiles (Path relativeFilePath) = do
     let parentDirPath = addTrailingPathSeparator . takeDirectory $ relativeFilePath
     let absoluteFilePath = syncDir </> relativeFilePath
     let parentDirMaybe = Map.lookup (Path parentDirPath) remoteFiles
     case parentDirMaybe of
-        Just parentDir -> Created <$> upload parentDir absoluteFilePath
+        Just parentDir -> do
+            remoteFile <- upload parentDir absoluteFilePath
+            return (Created (File (Path relativeFilePath) (modifiedTime (getFile remoteFile))), remoteFile)
         Nothing -> error $ "no parent dir: " ++ parentDirPath
 
-applyCreatedDirToRemote ::Path -> ApiAction (Change, RemoteFile)
+applyCreatedDirToRemote :: Path -> ApiAction (Change, RemoteFile)
 applyCreatedDirToRemote dirPath = do
     --For now Digipost only support one level of folders
     let folderName = takeFileName . takeDirectory . filePath $ dirPath
@@ -214,13 +221,13 @@ applyDeletedToRemote remoteFiles file = do
             return $ Deleted (getFile remoteFile)
         Nothing -> error $ "remote file not found: " ++ show deletedPath
 
-upload :: RemoteFile -> FilePath -> ApiAction File
+upload :: RemoteFile -> FilePath -> ApiAction RemoteFile
 upload (RemoteDir _ parentFolder) absoluteFilePath = do
     uploadLink <- liftIO $ linkOrException "upload_document" (DP.folderLinks parentFolder)
     (manager, aToken, csrf, _) <- ask
     doc <- liftResourceT $ uploadDocument aToken manager uploadLink csrf absoluteFilePath
     liftIO $ debugM "Sync.upload" ("Uploaded " ++ absoluteFilePath)
-    return $ fileFromFolderDoc parentFolder doc
+    return $ RemoteFile (fileFromFolderDoc parentFolder doc) parentFolder doc
 upload _ _ = error "parent dir cannot be a file"
 
 deleteRemote :: RemoteFile -> ApiAction ()

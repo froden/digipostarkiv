@@ -21,9 +21,9 @@ class MenuController: NSObject {
     @IBOutlet weak var appDelegate: DigipostarkivAppDelegate!
     
     override func awakeFromNib() {
-        statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(20.0)
+        statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength)
         statusItem!.menu = statusMenu
-        let statusImageSize = NSSize(width: 15.2, height: 20.0)
+        let statusImageSize = NSSize(width: 14.44, height: 19.0)
         statusImage = NSImage(named: "digipost-black.png")
         statusImage?.size = statusImageSize
         statusImageActive = NSImage(named: "digipost-red.png")
@@ -70,10 +70,10 @@ class MenuController: NSObject {
     
     override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
         let started = appDelegate.isStarted()
-        if (menuItem.action == "startSync:") {
+        if (menuItem.action == #selector(startSync)) {
             menuItem.hidden = started
             return !started
-        } else if (menuItem.action == "stopSync:") {
+        } else if (menuItem.action == #selector(stopSync)) {
             menuItem.hidden = !started
             return started
         } else {
