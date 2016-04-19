@@ -97,6 +97,9 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func fullSync() {
+        objc_sync_enter(self)
+        defer { objc_sync_exit(self) }
+        
         menuController.showActiveIcon()
         let result = Sync.sync();
         if (result != 0) {
