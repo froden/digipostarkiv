@@ -17,12 +17,12 @@ class LoginWindowController: NSWindowController {
     
     func showOauthLoginPage() {
         let oauthUrlString = Sync.oauthUrl("state")
-        let oauthUrl = NSURL(string: oauthUrlString)
-        let request = oauthUrl.map {u in NSURLRequest(URL: u)}
-        NSApp.activateIgnoringOtherApps(true)
+        let oauthUrl = URL(string: oauthUrlString!)
+        let request = oauthUrl.map {u in URLRequest(url: u)}
+        NSApp.activate(ignoringOtherApps: true)
         loginWindow.makeKeyAndOrderFront(self)
         if let req = request {
-            loginView.mainFrame.loadRequest(req)
+            loginView.mainFrame.load(req)
         } else {
             //TODO load error page
         }

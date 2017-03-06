@@ -14,7 +14,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var menuController: MenuController!
     
     var syncInProgress: Bool
-    var syncTimer: NSTimer?
+    var syncTimer: Timer?
     var runNumber = 0
     
     override init() {
@@ -22,27 +22,27 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         syncTimer = nil
     }
     
-    func applicationWillFinishLaunching(notification: NSNotification) {
-        NSAppleEventManager.sharedAppleEventManager().setEventHandler(
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSAppleEventManager.shared().setEventHandler(
             self,
             andSelector: #selector(handleURLEvent(_:replyEvent:)),
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL))
     }
     
-    func applicationDidFinishLaunching(notification: NSNotification) {
+    func applicationDidFinishLaunching(_ notification: Notification) {
         Sync.initSync()
         startSyncTimer()
     }
     
     func isStarted() -> Bool {
-        return syncTimer != nil && syncTimer!.valid
+        return syncTimer != nil && syncTimer!.isValid
     }
     
     func startSyncTimer() {
         if (!isStarted()) {
             NSLog("starting sync timer")
-            syncTimer = NSTimer.scheduledTimerWithTimeInterval(10.0, target: self, selector: #selector(sync), userInfo: nil, repeats: true)
+            syncTimer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(sync), userInfo: nil, repeats: true)
         }
         syncTimer!.fire()
     }
@@ -57,7 +57,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
     
     func sync() {
         if (Sync.isLoggedIn()) {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+            DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default).async(execute: {
                 self.detectChangeAndSync()
             })
         } else {
@@ -80,7 +80,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
                 remoteSync = true
                 NSLog("Remote change detected")
             } else if (remoteChangeResult == 1) {
-                dispatch_async(dispatch_get_main_queue(), {self.loginWindowController.showOauthLoginPage()})
+                DispatchQueue.main.async(execute: {self.loginWindowController.showOauthLoginPage()})
                 return
             } else if (remoteChangeResult == 99){
                 NSLog("Unhandled syncresult from hsRemoteChange")
@@ -104,7 +104,7 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         let result = Sync.sync();
         if (result != 0) {
             if (result == 1) {
-                dispatch_async(dispatch_get_main_queue(), {self.loginWindowController.showOauthLoginPage()})
+                DispatchQueue.main.async(execute: {self.loginWindowController.showOauthLoginPage()})
             } else {
                 //TODO: give up after n failures?
                 NSLog("Unhandled syncresult: %i", result);
@@ -113,10 +113,10 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         menuController.showStandardIcon()
     }
     
-    func handleURLEvent(event: NSAppleEventDescriptor, replyEvent: NSAppleEventDescriptor) {
+    func handleURLEvent(_ event: NSAppleEventDescriptor, replyEvent: NSAppleEventDescriptor) {
         
-        let urlString = event.paramDescriptorForKeyword(AEKeyword(keyDirectObject))?.stringValue
-        let url = urlString.flatMap { NSURL(string: $0) }
+        let urlString = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue
+        let url = urlString.flatMap { URL(string: $0) }
         let authCode = url.flatMap(parseCode)
         
         if let code = authCode {
@@ -133,14 +133,14 @@ class DigipostarkivAppDelegate: NSObject, NSApplicationDelegate {
         
     }
     
-    func parseCode(url: NSURL) -> NSString? {
-        let urlComponents = url.query?.componentsSeparatedByString("&")
+    func parseCode(_ url: URL) -> NSString? {
+        let urlComponents = url.query?.components(separatedBy: "&")
         let codeCompoents = urlComponents?
-            .map{$0.componentsSeparatedByString("=")}
+            .map{$0.components(separatedBy: "=")}
         let codes = codeCompoents?
             .filter{$0.count == 2 && $0[0] == "code"}
             .first
-        return codes?[1]
+        return codes?[1] as NSString?
     }
     
 }

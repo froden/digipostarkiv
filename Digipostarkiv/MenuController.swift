@@ -21,7 +21,7 @@ class MenuController: NSObject {
     @IBOutlet weak var appDelegate: DigipostarkivAppDelegate!
     
     override func awakeFromNib() {
-        statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(NSVariableStatusItemLength)
+        statusItem = NSStatusBar.system().statusItem(withLength: NSVariableStatusItemLength)
         statusItem!.menu = statusMenu
         let statusImageSize = NSSize(width: 14.44, height: 19.0)
         statusImage = NSImage(named: "digipost-black.png")
@@ -35,19 +35,19 @@ class MenuController: NSObject {
         statusItem!.highlightMode = true
     }
     
-    @IBAction func exitApp(sender: NSMenu) {
+    @IBAction func exitApp(_ sender: NSMenu) {
         hs_exit()
-        NSApplication.sharedApplication().terminate(self)
+        NSApplication.shared().terminate(self)
     }
     
-    @IBAction func openInFinder(sender: NSMenu) {
-        let homePath = NSHomeDirectory().stringByAppendingString("/Digipostarkiv")
-        NSWorkspace.sharedWorkspace().openFile(homePath)
+    @IBAction func openInFinder(_ sender: NSMenu) {
+        let homePath = NSHomeDirectory() + "/Digipostarkiv"
+        NSWorkspace.shared().openFile(homePath)
     }
     
-    @IBAction func manualSync(sender: NSMenu) {
+    @IBAction func manualSync(_ sender: NSMenu) {
         if (Sync.isLoggedIn()) {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+            DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default).async(execute: {
                 self.appDelegate.fullSync()
             })
         } else {
@@ -55,26 +55,26 @@ class MenuController: NSObject {
             loginWindowController.showOauthLoginPage()
         }
     }
-    @IBAction func openDigipostInBrowser(sender: AnyObject) {
-        let digipostUrl = NSURL(string: "https://www.digipost.no/app/#/")
-        NSWorkspace.sharedWorkspace().openURL(digipostUrl!)
+    @IBAction func openDigipostInBrowser(_ sender: AnyObject) {
+        let digipostUrl = URL(string: "https://www.digipost.no/app/#/")
+        NSWorkspace.shared().open(digipostUrl!)
     }
     
-    @IBAction func startSync(sender: NSMenu) {
+    @IBAction func startSync(_ sender: NSMenu) {
         appDelegate.startSyncTimer()
     }
     
-    @IBAction func stopSync(sender: AnyObject) {
+    @IBAction func stopSync(_ sender: AnyObject) {
         appDelegate.stopSyncTimer()
     }
     
-    override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
+    override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         let started = appDelegate.isStarted()
         if (menuItem.action == #selector(startSync)) {
-            menuItem.hidden = started
+            menuItem.isHidden = started
             return !started
         } else if (menuItem.action == #selector(stopSync)) {
-            menuItem.hidden = !started
+            menuItem.isHidden = !started
             return started
         } else {
             return true
