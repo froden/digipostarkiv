@@ -35,7 +35,7 @@ accessToken (State state) (AuthCode code) manager = do
     let (url, body) = accessTokenUrl' digigpostKey (sToBS code) (Just "code")
     token <- liftIO $ doJSONPostRequest manager digigpostKey url (body ++ [("state", sToBS state)])
     case token of
-        Right (AccessToken at (Just rt) _ _) -> return $ HTTP.AccessToken at rt
+        Right (AccessToken at (Just rt) _ _ _) -> return $ HTTP.AccessToken at rt
         Right _ -> throwIO NotAuthenticated
         Left _ -> throwIO NotAuthenticated
 
@@ -45,7 +45,7 @@ refreshAccessToken manager oldToken = do
     let oldRt = HTTP.refreshToken oldToken
     newToken <- fetchRefreshToken manager digigpostKey oldRt
     case newToken of
-        Right (AccessToken at _ _ _) -> return $ HTTP.AccessToken at oldRt
+        Right (AccessToken at _ _ _ _) -> return $ HTTP.AccessToken at oldRt
         Left _ -> throwIO NotAuthenticated
 
 storeAccessToken :: HTTP.AccessToken -> IO ()
@@ -68,11 +68,17 @@ loadAccessToken = catch readFileIfExists whenNotFound
 handleTokenRefresh :: (Manager -> HTTP.AccessToken -> ResourceT IO a) -> HTTP.AccessToken -> Manager -> ResourceT IO a
 handleTokenRefresh accessFunc token manager = catch (accessFunc manager token) handleException
     where
-        handleException (StatusCodeException (Status 403 _) _ _) = do
-            newToken <- liftIO $ refreshAccessToken manager token --TODO: exceptions?
-            liftIO $ storeAccessToken newToken
-            accessFunc manager newToken  --TODO: retry count??
-        handleException (StatusCodeException (Status 401 _) _ _) = throw NotAuthenticated
+        handleException e@(HttpExceptionRequest _ (StatusCodeException response _)) =
+            let
+                status = responseStatus response
+            in
+                if status == status403 then
+                    do
+                        newToken <- liftIO $ refreshAccessToken manager token --TODO: exceptions?
+                        liftIO $ storeAccessToken newToken
+                        accessFunc manager newToken  --TODO: retry count??
+                else if status == status401 then throw NotAuthenticated
+                else throw $ HttpFailed e
         handleException e = throw $ HttpFailed e
 
 removeAccessToken :: IO ()
