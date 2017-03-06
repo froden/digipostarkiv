@@ -42,8 +42,6 @@ library
                        lifted-base,
                        hslogger,
                        MissingH,
-                       HDBC,
-                       HDBC-sqlite3,
                        async
   hs-source-dirs:      src
   exposed-modules:     DigipostKey, HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File
