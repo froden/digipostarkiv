@@ -8,6 +8,7 @@ import Network.HTTP.Types.Header
 import Data.ByteString.Char8 (pack, unpack)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as C
 import Control.Monad.Except
 import GHC.Generics (Generic)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
@@ -18,6 +19,7 @@ import Control.Exception
 import Data.Typeable
 import System.FilePath.Posix
 import Data.List
+import System.Log.Logger
 
 import Http
 import qualified ApiTypes as DP
@@ -69,12 +71,12 @@ authenticatePwd manager auth = do
     return $ responseCookieJar authRes
 
 authRequest :: String -> Auth -> ResourceT IO Request
-authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrl url
+authRequest url auth = setBody body . addHeaders headers . setMethod "POST" <$> parseUrlThrow url
     where headers = [contentTypeDigipost, acceptDigipost]
           body = RequestBodyLBS $ encode auth
 
 getRequest :: (MonadThrow m, Functor m) => Session -> String -> m Request
-getRequest session url = addHeader acceptDigipost <$> setSession session <$> parseUrl url
+getRequest session url = addHeader acceptDigipost . setSession session <$> parseUrlThrow url
 
 getRoot :: Manager -> Session -> ResourceT IO DP.Root
 getRoot manager session = getRequest session digipostBaseUrl >>= getJson manager
@@ -107,24 +109,23 @@ downloadDocRequest session document = contentLink >>= requestFromLink
           links = DP.documentLinks document
 
 downloadAll :: Session -> Manager -> FilePath -> [DP.Document] -> ResourceT IO ()
-downloadAll session manager syncDir = void . mapM download
+downloadAll session manager syncDir = mapM_ download
     where download = downloadDocument session manager syncDir
 
 uploadAll :: Session -> Manager -> DP.Link -> String -> [FilePath] -> ResourceT IO ()
-uploadAll session manager uploadLink token = void . mapM upload
+uploadAll session manager uploadLink token = mapM_ upload
     where upload = uploadFileMultipart session manager uploadLink token
 
 uploadFileMultipart :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO DP.Link
 uploadFileMultipart session manager uploadLink token file = do
-    req <- addHeader ("Accept", "*/*") <$> setSession session <$> parseUrl (DP.uri uploadLink)
+    req <- addHeader ("Accept", "*/*") . setSession session <$> parseUrlThrow (DP.uri uploadLink)
     let subject = UTF8.fromString . DP.localToRemoteName . takeBaseName $ file
     multipartReq <- formDataBody [partBS "subject" subject,
                                   partBS "token" (pack token),
                                   partFileSource "file" file] req
-    res <- http multipartReq manager
+    res <- httpLbs multipartReq manager
+    when ((C.unpack . responseBody) res /= "OK") $ liftIO $ errorM "Api.uploadFileMultipart" ("Response was: " ++ show (responseBody res))
     let (Just location) = find (\h -> hLocation == fst h) (responseHeaders res)
-    --check that responsebody is "OK"
-    --responseBody res $$+- sinkFile "temp.txt"
     return $ DP.Link "self" ((unpack . snd) location)
 
 uploadDocument :: Session -> Manager -> DP.Link -> String -> FilePath -> ResourceT IO DP.Document
@@ -136,27 +137,27 @@ createFolder :: Session -> Manager -> DP.Link -> String -> String -> ResourceT I
 createFolder session manager createLink csrf folderName = do
     let jsonBody = encode (DP.Folder folderName "FOLDER" [] Nothing)
     let body = RequestBodyLBS jsonBody
-    req <- setBody body <$>
-           addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] <$>
-           setSession session <$>
+    req <- setBody body .
+           addHeaders [acceptDigipost, contentTypeDigipost, ("X-CSRFToken", pack csrf)] .
+           setSession session .
            setMethod "POST" <$>
-           parseUrl (DP.uri createLink)
+           parseUrlThrow (DP.uri createLink)
     httpLbs req manager >>= (decodeOrException . responseBody)
 
 deleteDocument :: Session -> Manager -> String -> DP.Document -> ResourceT IO ()
 deleteDocument session manager csrf document = do
     deleteLink <- liftIO $ linkOrException "delete_document" (DP.documentLinks document)
-    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] <$>
-               setSession session <$>
+    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] .
+               setSession session .
                setMethod "DELETE" <$>
-               parseUrl (DP.uri deleteLink)
+               parseUrlThrow (DP.uri deleteLink)
     void $ httpLbs req manager
 
 deleteFolder :: Session -> Manager -> String -> DP.Folder -> ResourceT IO ()
 deleteFolder session manager csrf folder = do
     deleteLink <- liftIO $ linkOrException "delete_folder" (DP.folderLinks folder)
-    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] <$>
-               setSession session <$>
+    req <- addHeaders [acceptDigipost, ("X-CSRFToken", pack csrf)] .
+               setSession session .
                setMethod "DELETE" <$>
-               parseUrl (DP.uri deleteLink)
+               parseUrlThrow (DP.uri deleteLink)
     void $ httpLbs req manager

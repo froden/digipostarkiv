@@ -45,7 +45,7 @@ library
                        async
   hs-source-dirs:      src
   exposed-modules:     DigipostKey, HsCocoa, Api, ApiTypes, Error, Http, Oauth, Sync, File
-  ghc-options:         -Wall -staticlib -threaded
+  ghc-options:         -Wall -staticlib
   default-language:    Haskell2010
 
 executable digipostarkiv
